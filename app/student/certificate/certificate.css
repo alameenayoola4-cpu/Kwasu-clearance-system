@@ -1,0 +1,321 @@
+/* Certificate Page Styles */
+
+.certificate-page {
+    min-height: 100vh;
+    background-color: var(--color-background);
+}
+
+.certificate-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-6);
+    background-color: var(--color-white);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.certificate-main {
+    padding: var(--space-8);
+    display: flex;
+    justify-content: center;
+}
+
+/* Certificate Design */
+.certificate {
+    width: 100%;
+    max-width: 800px;
+    background-color: var(--color-white);
+    border: 8px double var(--color-secondary);
+    padding: var(--space-10);
+    position: relative;
+    box-shadow: var(--shadow-lg);
+}
+
+.certificate::before {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    border: 2px solid var(--color-secondary);
+    pointer-events: none;
+}
+
+/* Certificate Header */
+.certificate-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: var(--space-6);
+}
+
+.certificate-logo {
+    margin-bottom: var(--space-4);
+}
+
+.certificate-institution h1 {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-primary);
+    text-align: center;
+    letter-spacing: 2px;
+    margin-bottom: var(--space-1);
+}
+
+.certificate-institution p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-light);
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+/* Certificate Title */
+.certificate-title {
+    text-align: center;
+    margin-bottom: var(--space-8);
+    padding: var(--space-4) 0;
+    border-top: 2px solid var(--color-primary);
+    border-bottom: 2px solid var(--color-primary);
+}
+
+.certificate-title h2 {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-primary);
+    letter-spacing: 4px;
+    margin-bottom: var(--space-2);
+}
+
+.certificate-type {
+    font-size: var(--font-size-base);
+    color: var(--color-secondary);
+    font-weight: 500;
+    font-style: italic;
+}
+
+/* Certificate Body */
+.certificate-body {
+    text-align: center;
+    margin-bottom: var(--space-8);
+}
+
+.certificate-intro {
+    font-size: var(--font-size-lg);
+    color: var(--color-text);
+    margin-bottom: var(--space-4);
+}
+
+.student-name-display {
+    margin: var(--space-6) 0;
+    padding: var(--space-4);
+    border-bottom: 2px solid var(--color-secondary);
+    display: inline-block;
+}
+
+.student-name-display h3 {
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    color: var(--color-text);
+    font-family: 'Georgia', serif;
+}
+
+.certificate-text {
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    line-height: 2;
+    margin-bottom: var(--space-2);
+}
+
+.certificate-completion {
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    line-height: 1.8;
+    margin-top: var(--space-6);
+    padding: var(--space-4);
+    background-color: var(--color-accent);
+    border-radius: var(--radius-md);
+}
+
+/* Certificate Footer */
+.certificate-footer {
+    margin-top: var(--space-10);
+}
+
+.certificate-details {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-10);
+    margin-bottom: var(--space-8);
+}
+
+.certificate-details .detail {
+    text-align: center;
+}
+
+.certificate-details .label {
+    display: block;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-1);
+}
+
+.certificate-details .value {
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.signatures {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-10);
+    margin-bottom: var(--space-6);
+}
+
+.signature-block {
+    text-align: center;
+}
+
+.signature-line {
+    width: 200px;
+    height: 1px;
+    background-color: var(--color-text);
+    margin: 0 auto var(--space-2);
+}
+
+.signature-name {
+    font-weight: 600;
+    margin-bottom: var(--space-1);
+}
+
+.signature-title {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.certificate-seal {
+    display: flex;
+    justify-content: center;
+}
+
+.seal {
+    width: 80px;
+    height: 80px;
+    border: 3px solid var(--color-secondary);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+/* Verification Notice */
+.verification-notice {
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px dashed var(--color-border);
+    text-align: center;
+}
+
+.verification-notice p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+/* Instructions */
+.certificate-instructions {
+    max-width: 800px;
+    margin: var(--space-6) auto;
+    padding: var(--space-5);
+    background-color: var(--color-white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+}
+
+.certificate-instructions h3 {
+    font-size: var(--font-size-base);
+    margin-bottom: var(--space-4);
+}
+
+.certificate-instructions ul {
+    list-style: disc;
+    padding-left: var(--space-5);
+}
+
+.certificate-instructions li {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-light);
+    margin-bottom: var(--space-2);
+}
+
+/* Print Styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .certificate-page {
+        background-color: white;
+    }
+
+    .certificate-main {
+        padding: 0;
+    }
+
+    .certificate {
+        max-width: 100%;
+        box-shadow: none;
+        border-radius: 0;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .certificate-main {
+        padding: var(--space-4);
+    }
+
+    .certificate {
+        padding: var(--space-6);
+    }
+
+    .certificate::before {
+        display: none;
+    }
+
+    .certificate-title h2 {
+        font-size: var(--font-size-xl);
+        letter-spacing: 2px;
+    }
+
+    .student-name-display h3 {
+        font-size: var(--font-size-2xl);
+    }
+
+    .signatures {
+        grid-template-columns: 1fr;
+        gap: var(--space-6);
+    }
+
+    .certificate-details {
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+}

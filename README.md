@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KWASU Digital Clearance System
 
-## Getting Started
+A modern, full-stack digital clearance management system for Kwara State University (KWASU). Built with Next.js 14, featuring role-based access for students, clearance officers, and administrators.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### For Students
+- Apply for clearance (SIWES, Final Year, etc.)
+- Track application status in real-time
+- Upload required documents
+- Download clearance certificates
+- Mobile-responsive with hamburger menu
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### For Clearance Officers
+- Review pending clearance requests
+- Approve or reject applications
+- Provide feedback on submissions
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### For Administrators
+- Manage students and officers
+- Configure clearance types
+- View reports and analytics
+- System settings
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech Stack
 
-## Learn More
+- **Framework:** Next.js 14 (App Router)
+- **Database:** SQLite with better-sqlite3
+- **Authentication:** JWT with HTTP-only cookies
+- **Styling:** CSS with CSS Variables
 
-To learn more about Next.js, take a look at the following resources:
+## Responsive Design
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The application is fully responsive with:
+- Desktop sidebar navigation
+- Mobile hamburger menu with slide-out drawer
+- Touch-friendly interface
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
+This project is licensed under the MIT License.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Built for KWASU
