@@ -1,5 +1,5 @@
 // Admin Reports API - Generate and export reports
-import { db } from '../../../../lib/db';
+import { sql } from '../../../../lib/db';
 import { getCurrentUser } from '../../../../lib/auth';
 import { NextResponse } from 'next/server';
 
@@ -22,39 +22,39 @@ export async function GET(request) {
         let reportData = {};
 
         if (reportType === 'summary' || reportType === 'clearance') {
-            // Clearance statistics
-            const totalRequests = db.prepare('SELECT COUNT(*) as count FROM clearance_requests').get();
-            const pendingRequests = db.prepare("SELECT COUNT(*) as count FROM clearance_requests WHERE status = 'pending'").get();
-            const approvedRequests = db.prepare("SELECT COUNT(*) as count FROM clearance_requests WHERE status = 'approved'").get();
-            const rejectedRequests = db.prepare("SELECT COUNT(*) as count FROM clearance_requests WHERE status = 'rejected'").get();
+            // Clearance statistics (async)
+            const totalRequests = await sql`SELECT COUNT(*) as count FROM clearance_requests`;
+            const pendingRequests = await sql`SELECT COUNT(*) as count FROM clearance_requests WHERE status = 'pending'`;
+            const approvedRequests = await sql`SELECT COUNT(*) as count FROM clearance_requests WHERE status = 'approved'`;
+            const rejectedRequests = await sql`SELECT COUNT(*) as count FROM clearance_requests WHERE status = 'rejected'`;
 
             reportData.clearance = {
-                total: totalRequests?.count || 0,
-                pending: pendingRequests?.count || 0,
-                approved: approvedRequests?.count || 0,
-                rejected: rejectedRequests?.count || 0,
+                total: parseInt(totalRequests[0]?.count) || 0,
+                pending: parseInt(pendingRequests[0]?.count) || 0,
+                approved: parseInt(approvedRequests[0]?.count) || 0,
+                rejected: parseInt(rejectedRequests[0]?.count) || 0,
             };
         }
 
         if (reportType === 'summary' || reportType === 'students') {
-            // Student statistics
-            const totalStudents = db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'student'").get();
-            const activeStudents = db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'student' AND status = 'active'").get();
+            // Student statistics (async)
+            const totalStudents = await sql`SELECT COUNT(*) as count FROM users WHERE role = 'student'`;
+            const activeStudents = await sql`SELECT COUNT(*) as count FROM users WHERE role = 'student' AND status = 'active'`;
 
             reportData.students = {
-                total: totalStudents?.count || 0,
-                active: activeStudents?.count || 0,
+                total: parseInt(totalStudents[0]?.count) || 0,
+                active: parseInt(activeStudents[0]?.count) || 0,
             };
         }
 
         if (reportType === 'summary' || reportType === 'officers') {
-            // Officer statistics  
-            const totalOfficers = db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'officer'").get();
-            const activeOfficers = db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'officer' AND status = 'active'").get();
+            // Officer statistics (async)
+            const totalOfficers = await sql`SELECT COUNT(*) as count FROM users WHERE role = 'officer'`;
+            const activeOfficers = await sql`SELECT COUNT(*) as count FROM users WHERE role = 'officer' AND status = 'active'`;
 
             reportData.officers = {
-                total: totalOfficers?.count || 0,
-                active: activeOfficers?.count || 0,
+                total: parseInt(totalOfficers[0]?.count) || 0,
+                active: parseInt(activeOfficers[0]?.count) || 0,
             };
         }
 
@@ -95,15 +95,15 @@ export async function POST(request) {
         const timestamp = new Date().toISOString().split('T')[0];
 
         if (reportType === 'clearance') {
-            // Generate clearance report
-            const requests = db.prepare(`
+            // Generate clearance report (async)
+            const requests = await sql`
                 SELECT cr.*, u.name as student_name, u.matric_no, ct.display_name as clearance_type_name
                 FROM clearance_requests cr
                 LEFT JOIN users u ON cr.student_id = u.id
                 LEFT JOIN clearance_types ct ON cr.clearance_type_id = ct.id
                 ORDER BY cr.created_at DESC
                 LIMIT 100
-            `).all();
+            `;
 
             reportContent = `KWASU Clearance Report - ${timestamp}\n`;
             reportContent += '='.repeat(50) + '\n\n';
@@ -117,14 +117,14 @@ export async function POST(request) {
             });
 
         } else if (reportType === 'officers') {
-            // Generate officer activity report
-            const officers = db.prepare(`
+            // Generate officer activity report (async)
+            const officers = await sql`
                 SELECT u.*, ct.display_name as clearance_type_name
                 FROM users u
                 LEFT JOIN clearance_types ct ON u.assigned_clearance_type = ct.id
                 WHERE u.role = 'officer'
                 ORDER BY u.created_at DESC
-            `).all();
+            `;
 
             reportContent = `KWASU Officer Activity Report - ${timestamp}\n`;
             reportContent += '='.repeat(50) + '\n\n';
@@ -139,13 +139,19 @@ export async function POST(request) {
             });
 
         } else if (reportType === 'statistics') {
-            // Generate statistics report
+            // Generate statistics report (async)
+            const studentsResult = await sql`SELECT COUNT(*) as count FROM users WHERE role = 'student'`;
+            const officersResult = await sql`SELECT COUNT(*) as count FROM users WHERE role = 'officer'`;
+            const pendingResult = await sql`SELECT COUNT(*) as count FROM clearance_requests WHERE status = 'pending'`;
+            const approvedResult = await sql`SELECT COUNT(*) as count FROM clearance_requests WHERE status = 'approved'`;
+            const rejectedResult = await sql`SELECT COUNT(*) as count FROM clearance_requests WHERE status = 'rejected'`;
+
             const stats = {
-                students: db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'student'").get()?.count || 0,
-                officers: db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'officer'").get()?.count || 0,
-                pending: db.prepare("SELECT COUNT(*) as count FROM clearance_requests WHERE status = 'pending'").get()?.count || 0,
-                approved: db.prepare("SELECT COUNT(*) as count FROM clearance_requests WHERE status = 'approved'").get()?.count || 0,
-                rejected: db.prepare("SELECT COUNT(*) as count FROM clearance_requests WHERE status = 'rejected'").get()?.count || 0,
+                students: parseInt(studentsResult[0]?.count) || 0,
+                officers: parseInt(officersResult[0]?.count) || 0,
+                pending: parseInt(pendingResult[0]?.count) || 0,
+                approved: parseInt(approvedResult[0]?.count) || 0,
+                rejected: parseInt(rejectedResult[0]?.count) || 0,
             };
 
             reportContent = `KWASU Monthly Statistics Report - ${timestamp}\n`;

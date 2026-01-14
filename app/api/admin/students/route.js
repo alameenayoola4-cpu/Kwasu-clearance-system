@@ -1,5 +1,5 @@
 // Admin Students API - Get all students
-import { db } from '../../../../lib/db';
+import { sql } from '../../../../lib/db';
 import { getCurrentUser } from '../../../../lib/auth';
 import { NextResponse } from 'next/server';
 
@@ -14,13 +14,13 @@ export async function GET(request) {
             );
         }
 
-        // Get all students
-        const students = db.prepare(`
+        // Get all students (async)
+        const students = await sql`
             SELECT id, email, name, matric_no, department, faculty, clearance_type, status, created_at
             FROM users 
             WHERE role = 'student'
             ORDER BY created_at DESC
-        `).all();
+        `;
 
         return NextResponse.json({
             success: true,
