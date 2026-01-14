@@ -5,8 +5,8 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import '../officer.css';
-import './review.css';
+import '../../officer.css';
+import '../review.css';
 
 export default function ReviewPage({ params }) {
     const router = useRouter();
