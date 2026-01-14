@@ -17,8 +17,8 @@ export async function POST(request) {
 
         const { email, password, role } = validation.data;
 
-        // Find user by email
-        const user = userQueries.findByEmail.get(email);
+        // Find user by email (async)
+        const user = await userQueries.findByEmail(email);
 
         if (!user) {
             return errorResponse('Invalid email or password', 401);

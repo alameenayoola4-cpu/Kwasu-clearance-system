@@ -15,16 +15,16 @@ export async function POST(request) {
             return errorResponse(validation.error);
         }
 
-        const { name, email, password, matric_no, department, faculty } = validation.data;
+        const { name, email, password, matric_no, department, faculty, level } = validation.data;
 
-        // Check if email already exists
-        const existingEmail = userQueries.findByEmail.get(email);
+        // Check if email already exists (async)
+        const existingEmail = await userQueries.findByEmail(email);
         if (existingEmail) {
             return errorResponse('An account with this email already exists');
         }
 
-        // Check if matric number already exists
-        const existingMatric = userQueries.findByMatric.get(matric_no);
+        // Check if matric number already exists (async)
+        const existingMatric = await userQueries.findByMatric(matric_no);
         if (existingMatric) {
             return errorResponse('An account with this matric number already exists');
         }
@@ -32,8 +32,8 @@ export async function POST(request) {
         // Hash password
         const hashedPassword = await hashPassword(password);
 
-        // Create user
-        const result = userQueries.create.run({
+        // Create user (async)
+        const result = await userQueries.create({
             email,
             password: hashedPassword,
             name,
@@ -41,11 +41,12 @@ export async function POST(request) {
             matric_no,
             department,
             faculty,
+            level: level || null,
             clearance_type: null,
         });
 
-        // Get created user
-        const user = userQueries.findById.get(result.lastInsertRowid);
+        // Get created user (async)
+        const user = await userQueries.findById(result.lastInsertRowid);
 
         // Generate JWT token
         const token = generateToken(user);
@@ -62,6 +63,7 @@ export async function POST(request) {
             matric_no: user.matric_no,
             department: user.department,
             faculty: user.faculty,
+            level: user.level,
         };
 
         return successResponse('Registration successful', { user: userData });

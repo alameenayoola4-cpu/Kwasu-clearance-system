@@ -12,8 +12,8 @@ export async function GET() {
             return errorResponse('Not authenticated', 401);
         }
 
-        // Get fresh user data from database
-        const user = userQueries.findById.get(tokenUser.id);
+        // Get fresh user data from database (async)
+        const user = await userQueries.findById(tokenUser.id);
 
         if (!user) {
             return errorResponse('User not found', 404);
@@ -32,6 +32,7 @@ export async function GET() {
             matric_no: user.matric_no,
             department: user.department,
             faculty: user.faculty,
+            level: user.level,
             clearance_type: user.clearance_type,
         };
 

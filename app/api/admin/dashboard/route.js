@@ -16,13 +16,17 @@ export async function GET() {
             return errorResponse('Access denied', 403);
         }
 
-        // Get statistics
-        const totalStudents = userQueries.count.get('student')?.count || 0;
-        const totalOfficers = userQueries.count.get('officer')?.count || 0;
-        const pendingClearances = requestQueries.countByStatus.get('pending')?.count || 0;
+        // Get statistics (async)
+        const totalStudentsResult = await userQueries.count('student');
+        const totalOfficersResult = await userQueries.count('officer');
+        const pendingResult = await requestQueries.countByStatus('pending');
 
-        // Get all officers
-        const officers = userQueries.findOfficers.all('officer');
+        const totalStudents = totalStudentsResult?.count || 0;
+        const totalOfficers = totalOfficersResult?.count || 0;
+        const pendingClearances = pendingResult?.count || 0;
+
+        // Get all officers (async)
+        const officers = await userQueries.findOfficers('officer');
 
         const formattedOfficers = officers.map(officer => ({
             id: officer.id,

@@ -1,7 +1,7 @@
 // POST /api/student/apply - Submit clearance application
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { requestQueries, db } from '@/lib/db';
+import { requestQueries, sql } from '@/lib/db';
 
 export async function POST(request) {
     try {
@@ -23,26 +23,26 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Invalid clearance type' }, { status: 400 });
         }
 
-        // Check if student already has a pending application of this type
-        const existingRequest = db.prepare(`
+        // Check if student already has a pending application of this type (async)
+        const existingRequest = await sql`
             SELECT * FROM clearance_requests 
-            WHERE student_id = ? AND type = ? AND status = 'pending'
-        `).get(user.id, clearance_type);
+            WHERE student_id = ${user.id} AND type = ${clearance_type} AND status = 'pending'
+        `;
 
-        if (existingRequest) {
+        if (existingRequest.length > 0) {
             return NextResponse.json({
                 message: 'You already have a pending application for this clearance type'
             }, { status: 400 });
         }
 
-        // Generate request ID
+        // Generate request ID (async)
         const year = new Date().getFullYear();
-        const countResult = db.prepare('SELECT COUNT(*) as count FROM clearance_requests').get();
-        const count = (countResult?.count || 0) + 1;
+        const countResult = await sql`SELECT COUNT(*) as count FROM clearance_requests`;
+        const count = (parseInt(countResult[0]?.count) || 0) + 1;
         const requestId = `CLR-${year}-${String(count).padStart(4, '0')}`;
 
-        // Insert clearance application using named parameters
-        const result = requestQueries.create.run({
+        // Insert clearance application (async)
+        const result = await requestQueries.create({
             request_id: requestId,
             student_id: user.id,
             type: clearance_type,

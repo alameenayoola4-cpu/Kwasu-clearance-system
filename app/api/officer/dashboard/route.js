@@ -16,8 +16,8 @@ export async function GET() {
             return errorResponse('Access denied', 403);
         }
 
-        // Get fresh user data
-        const user = userQueries.findById.get(tokenUser.id);
+        // Get fresh user data (async)
+        const user = await userQueries.findById(tokenUser.id);
 
         if (!user) {
             return errorResponse('User not found', 404);
@@ -28,15 +28,21 @@ export async function GET() {
         let allRequests = [];
 
         if (user.clearance_type === 'both') {
-            // Can see all requests
-            pendingRequests = requestQueries.findPending.all();
-            allRequests = [...requestQueries.findByType.all('siwes'), ...requestQueries.findByType.all('final')];
+            // Can see all requests (async)
+            pendingRequests = await requestQueries.findPending();
+            const siwesRequests = await requestQueries.findByType('siwes');
+            const finalRequests = await requestQueries.findByType('final');
+            allRequests = [...siwesRequests, ...finalRequests];
         } else if (user.clearance_type === 'siwes') {
-            pendingRequests = requestQueries.findPendingByType.all('siwes');
-            allRequests = requestQueries.findByType.all('siwes');
+            pendingRequests = await requestQueries.findPendingByType('siwes');
+            allRequests = await requestQueries.findByType('siwes');
         } else if (user.clearance_type === 'final') {
-            pendingRequests = requestQueries.findPendingByType.all('final');
-            allRequests = requestQueries.findByType.all('final');
+            pendingRequests = await requestQueries.findPendingByType('final');
+            allRequests = await requestQueries.findByType('final');
+        } else {
+            // Default: show all pending requests
+            pendingRequests = await requestQueries.findPending();
+            allRequests = pendingRequests;
         }
 
         // Calculate statistics
@@ -75,7 +81,7 @@ export async function GET() {
                 pending: pendingCount,
                 completedToday: approvedToday,
                 totalStudents,
-                avgResponseTime: '2.4', // Static for now
+                avgResponseTime: '2.4',
             },
             requests: formattedRequests,
         });

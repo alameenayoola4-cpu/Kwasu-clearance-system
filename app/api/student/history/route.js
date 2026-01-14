@@ -15,8 +15,8 @@ export async function GET(request) {
             return NextResponse.json({ message: 'Access denied' }, { status: 403 });
         }
 
-        // Get all clearance requests for this student using existing query
-        const requests = requestQueries.findByStudent.all(user.id);
+        // Get all clearance requests for this student (async)
+        const requests = await requestQueries.findByStudent(user.id);
 
         return NextResponse.json({
             success: true,

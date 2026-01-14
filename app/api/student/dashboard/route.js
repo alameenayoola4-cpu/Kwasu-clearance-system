@@ -1,13 +1,13 @@
 // GET /api/student/dashboard - Get student dashboard data
 import { getCurrentUser } from '@/lib/auth';
-import { requestQueries, userQueries, clearanceTypeQueries, settingsQueries, db } from '@/lib/db';
+import { requestQueries, userQueries, clearanceTypeQueries, settingsQueries, sql } from '@/lib/db';
 import { errorResponse, successResponse, formatDate, timeAgo } from '@/lib/utils';
 
 // Helper to get department's program duration
-function getDepartmentDuration(department) {
+async function getDepartmentDuration(department) {
     try {
-        const dept = db.prepare('SELECT program_duration FROM departments WHERE name = ?').get(department);
-        return dept?.program_duration || 4; // Default to 4-year if not found
+        const result = await sql`SELECT program_duration FROM departments WHERE name = ${department}`;
+        return result[0]?.program_duration || 4;
     } catch (e) {
         return 4;
     }
@@ -15,18 +15,18 @@ function getDepartmentDuration(department) {
 
 // Check if student level matches clearance target level
 function levelMatches(studentLevel, targetLevel, programDuration) {
-    if (!targetLevel) return true; // No restriction
+    if (!targetLevel) return true;
     if (targetLevel === 'final') {
-        const finalYear = programDuration * 100; // 4-year = 400, 5-year = 500
+        const finalYear = programDuration * 100;
         return parseInt(studentLevel) === finalYear;
     }
     return parseInt(studentLevel) === parseInt(targetLevel);
 }
 
-// Get setting value helper
-function getSetting(key, defaultValue = null) {
+// Get setting value helper (async)
+async function getSetting(key, defaultValue = null) {
     try {
-        const result = settingsQueries.get.get(key);
+        const result = await settingsQueries.get(key);
         return result?.value || defaultValue;
     } catch (e) {
         return defaultValue;
@@ -46,8 +46,8 @@ export async function GET() {
             return errorResponse('Access denied', 403);
         }
 
-        // Get fresh user data
-        const user = userQueries.findById.get(tokenUser.id);
+        // Get fresh user data (async)
+        const user = await userQueries.findById(tokenUser.id);
 
         if (!user) {
             return errorResponse('User not found', 404);
@@ -55,16 +55,16 @@ export async function GET() {
 
         // Get student's level and department duration
         const studentLevel = user.level || 100;
-        const programDuration = getDepartmentDuration(user.department);
+        const programDuration = await getDepartmentDuration(user.department);
 
-        // Get active clearance types the student is eligible for
-        const allTypes = clearanceTypeQueries.findActive.all();
+        // Get active clearance types the student is eligible for (async)
+        const allTypes = await clearanceTypeQueries.findActive();
         const eligibleTypes = allTypes.filter(type =>
             levelMatches(studentLevel, type.target_level, programDuration)
         );
 
-        // Get student's clearance requests
-        const requests = requestQueries.findByStudent.all(user.id);
+        // Get student's clearance requests (async)
+        const requests = await requestQueries.findByStudent(user.id);
 
         // Format requests for frontend
         const formattedRequests = requests.map(req => ({
@@ -107,9 +107,9 @@ export async function GET() {
                 time: r.time_ago,
             }));
 
-        // Get session settings
-        const currentSession = getSetting('currentSession', '2025/2026');
-        const currentSemester = getSetting('currentSemester', '1');
+        // Get session settings (async)
+        const currentSession = await getSetting('currentSession', '2025/2026');
+        const currentSemester = await getSetting('currentSemester', '1');
 
         return successResponse('Dashboard data retrieved', {
             user: {
@@ -138,4 +138,3 @@ export async function GET() {
         return errorResponse('Failed to load dashboard', 500);
     }
 }
-
