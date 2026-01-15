@@ -267,3 +267,9 @@
         display: none;
     }
 }
+
+/* Badge for Faculty */
+.badge-faculty {
+    background-color: #e3f2fd;
+    color: #1565c0;
+}

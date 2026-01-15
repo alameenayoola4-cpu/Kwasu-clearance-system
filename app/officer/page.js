@@ -67,8 +67,14 @@ export default function OfficerDashboard() {
         const classes = {
             siwes: 'badge badge-siwes',
             final: 'badge badge-final',
+            faculty: 'badge badge-faculty',
         };
-        return <span className={classes[type]}>{type === 'siwes' ? 'SIWES' : 'Final Clearance'}</span>;
+        const labels = {
+            siwes: 'SIWES',
+            final: 'Final Clearance',
+            faculty: 'Faculty Clearance',
+        };
+        return <span className={classes[type] || 'badge'}>{labels[type] || type}</span>;
     };
 
     // Filter requests
@@ -162,6 +168,12 @@ export default function OfficerDashboard() {
                 <header className="topbar">
                     <div className="topbar-left">
                         <h1>Officer Clearance Dashboard</h1>
+                        {data?.user?.assigned_type_name && (
+                            <span className="badge badge-primary" style={{ marginLeft: '1rem' }}>
+                                {data.user.assigned_type_name}
+                                {data.user.assigned_faculty && ` - ${data.user.assigned_faculty}`}
+                            </span>
+                        )}
                     </div>
                     <div className="topbar-right">
                         <div className="search-box">

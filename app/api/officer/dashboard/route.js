@@ -1,6 +1,6 @@
 // GET /api/officer/dashboard - Get officer dashboard data
 import { getCurrentUser } from '@/lib/auth';
-import { requestQueries, userQueries } from '@/lib/db';
+import { requestQueries, userQueries, clearanceTypeQueries } from '@/lib/db';
 import { errorResponse, successResponse } from '@/lib/utils';
 
 export async function GET() {
@@ -23,26 +23,39 @@ export async function GET() {
             return errorResponse('User not found', 404);
         }
 
-        // Determine which requests this officer can see based on clearance_type
+        // Get the clearance type name if officer has one assigned
+        let assignedTypeName = null;
+        let assignedTypeFilter = null;
+
+        if (user.assigned_clearance_type) {
+            const clearanceType = await clearanceTypeQueries.findById(user.assigned_clearance_type);
+            if (clearanceType) {
+                assignedTypeName = clearanceType.display_name;
+                assignedTypeFilter = clearanceType.name; // 'siwes', 'final', 'faculty'
+            }
+        }
+
+        // Determine which requests this officer can see based on assigned_clearance_type
         let pendingRequests = [];
         let allRequests = [];
 
-        if (user.clearance_type === 'both') {
-            // Can see all requests (async)
+        if (!assignedTypeFilter) {
+            // No specific type assigned - show all requests
             pendingRequests = await requestQueries.findPending();
             const siwesRequests = await requestQueries.findByType('siwes');
             const finalRequests = await requestQueries.findByType('final');
-            allRequests = [...siwesRequests, ...finalRequests];
-        } else if (user.clearance_type === 'siwes') {
-            pendingRequests = await requestQueries.findPendingByType('siwes');
-            allRequests = await requestQueries.findByType('siwes');
-        } else if (user.clearance_type === 'final') {
-            pendingRequests = await requestQueries.findPendingByType('final');
-            allRequests = await requestQueries.findByType('final');
+            const facultyRequests = await requestQueries.findByType('faculty');
+            allRequests = [...siwesRequests, ...finalRequests, ...facultyRequests];
         } else {
-            // Default: show all pending requests
-            pendingRequests = await requestQueries.findPending();
-            allRequests = pendingRequests;
+            // Filter by assigned clearance type
+            pendingRequests = await requestQueries.findPendingByType(assignedTypeFilter);
+            allRequests = await requestQueries.findByType(assignedTypeFilter);
+
+            // For faculty-based officers, also filter by assigned faculty
+            if (assignedTypeFilter === 'faculty' && user.assigned_faculty) {
+                allRequests = allRequests.filter(r => r.faculty === user.assigned_faculty);
+                pendingRequests = pendingRequests.filter(r => r.faculty === user.assigned_faculty);
+            }
         }
 
         // Calculate statistics
@@ -75,7 +88,9 @@ export async function GET() {
                 name: user.name,
                 email: user.email,
                 department: user.department,
-                clearance_type: user.clearance_type,
+                assigned_clearance_type: user.assigned_clearance_type,
+                assigned_type_name: assignedTypeName,
+                assigned_faculty: user.assigned_faculty,
             },
             stats: {
                 pending: pendingCount,
