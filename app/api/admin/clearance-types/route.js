@@ -16,19 +16,23 @@ export async function GET() {
             return errorResponse('Access denied', 403);
         }
 
-        const types = clearanceTypeQueries.findAll.all();
+        // Async query
+        const types = await clearanceTypeQueries.findAll();
 
-        // Get requirements for each type
-        const typesWithRequirements = types.map(type => ({
-            id: type.id,
-            name: type.name,
-            display_name: type.display_name,
-            description: type.description,
-            is_faculty_based: type.is_faculty_based,
-            is_active: type.is_active,
-            target_level: type.target_level,
-            created_at: type.created_at,
-            requirements: requirementQueries.findByType.all(type.id),
+        // Get requirements for each type (async with Promise.all)
+        const typesWithRequirements = await Promise.all(types.map(async (type) => {
+            const requirements = await requirementQueries.findByType(type.id);
+            return {
+                id: type.id,
+                name: type.name,
+                display_name: type.display_name,
+                description: type.description,
+                is_faculty_based: type.is_faculty_based,
+                is_active: type.is_active,
+                target_level: type.target_level,
+                created_at: type.created_at,
+                requirements,
+            };
         }));
 
         return successResponse('Clearance types retrieved', {
@@ -65,42 +69,43 @@ export async function POST(request) {
             return errorResponse('Target Student Level is required');
         }
 
-        // Check if name already exists
-        const existing = clearanceTypeQueries.findByName.get(name);
+        // Check if name already exists (async)
+        const existing = await clearanceTypeQueries.findByName(name);
         if (existing) {
             return errorResponse('A clearance type with this name already exists');
         }
 
-        // Create clearance type
-        const result = clearanceTypeQueries.create.run({
+        // Create clearance type (async)
+        const result = await clearanceTypeQueries.create({
             name: name.toLowerCase().replace(/\s+/g, '-'),
             display_name,
             description: description || null,
-            is_faculty_based: is_faculty_based ? 1 : 0,
+            is_faculty_based: is_faculty_based || false,
             target_level: target_level || null,
             created_by: tokenUser.id,
         });
 
         const typeId = result.lastInsertRowid;
 
-        // Add requirements if provided
+        // Add requirements if provided (async)
         if (requirements && Array.isArray(requirements)) {
-            requirements.forEach((req, index) => {
-                requirementQueries.create.run({
+            for (let index = 0; index < requirements.length; index++) {
+                const req = requirements[index];
+                await requirementQueries.create({
                     clearance_type_id: typeId,
                     name: req.name,
                     description: req.description || null,
-                    is_required: req.is_required !== false ? 1 : 0,
+                    is_required: req.is_required !== false,
                     max_size_mb: req.max_size_mb || 10,
                     allowed_formats: req.allowed_formats || 'pdf,jpg,png',
                     sort_order: index,
                 });
-            });
+            }
         }
 
-        // Get created type with requirements
-        const createdType = clearanceTypeQueries.findById.get(typeId);
-        const createdRequirements = requirementQueries.findByType.all(typeId);
+        // Get created type with requirements (async)
+        const createdType = await clearanceTypeQueries.findById(typeId);
+        const createdRequirements = await requirementQueries.findByType(typeId);
 
         return successResponse('Clearance type created successfully', {
             clearanceType: {

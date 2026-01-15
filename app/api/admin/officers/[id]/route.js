@@ -18,7 +18,7 @@ export async function GET(request, { params }) {
         }
 
         const { id } = await params;
-        const officer = userQueries.findById.get(id);
+        const officer = await userQueries.findById(id);
 
         if (!officer || officer.role !== 'officer') {
             return errorResponse('Officer not found', 404);
@@ -59,7 +59,7 @@ export async function PUT(request, { params }) {
         }
 
         const { id } = await params;
-        const officer = userQueries.findById.get(id);
+        const officer = await userQueries.findById(id);
 
         if (!officer || officer.role !== 'officer') {
             return errorResponse('Officer not found', 404);
@@ -68,8 +68,8 @@ export async function PUT(request, { params }) {
         const body = await request.json();
         const { name, phone, department, faculty, assigned_clearance_type, assigned_faculty, status } = body;
 
-        // Update officer
-        officerQueries.update.run({
+        // Update officer (async)
+        await officerQueries.update({
             id: parseInt(id),
             name: name || officer.name,
             phone: phone !== undefined ? phone : officer.phone,
@@ -79,14 +79,14 @@ export async function PUT(request, { params }) {
             assigned_faculty: assigned_faculty !== undefined ? assigned_faculty : officer.assigned_faculty,
         });
 
-        // Handle status change separately
+        // Handle status change separately (async)
         if (status === 'active') {
-            officerQueries.activate.run(id);
+            await officerQueries.activate(id);
         } else if (status === 'inactive') {
-            officerQueries.deactivate.run(id);
+            await officerQueries.deactivate(id);
         }
 
-        const updatedOfficer = userQueries.findById.get(id);
+        const updatedOfficer = await userQueries.findById(id);
 
         return successResponse('Officer updated successfully', {
             officer: {
@@ -122,14 +122,14 @@ export async function DELETE(request, { params }) {
         }
 
         const { id } = await params;
-        const officer = userQueries.findById.get(id);
+        const officer = await userQueries.findById(id);
 
         if (!officer || officer.role !== 'officer') {
             return errorResponse('Officer not found', 404);
         }
 
-        // Deactivate instead of delete
-        officerQueries.deactivate.run(id);
+        // Deactivate instead of delete (async)
+        await officerQueries.deactivate(id);
 
         return successResponse('Officer deactivated successfully');
 

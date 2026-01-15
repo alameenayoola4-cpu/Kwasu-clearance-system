@@ -18,13 +18,13 @@ export async function GET(request, { params }) {
         }
 
         const { id } = await params;
-        const type = clearanceTypeQueries.findById.get(id);
+        const type = await clearanceTypeQueries.findById(id);
 
         if (!type) {
             return errorResponse('Clearance type not found', 404);
         }
 
-        const requirements = requirementQueries.findByType.all(id);
+        const requirements = await requirementQueries.findByType(id);
 
         return successResponse('Clearance type retrieved', {
             clearanceType: {
@@ -52,7 +52,7 @@ export async function PUT(request, { params }) {
         }
 
         const { id } = await params;
-        const type = clearanceTypeQueries.findById.get(id);
+        const type = await clearanceTypeQueries.findById(id);
 
         if (!type) {
             return errorResponse('Clearance type not found', 404);
@@ -61,36 +61,37 @@ export async function PUT(request, { params }) {
         const body = await request.json();
         const { display_name, description, is_faculty_based, requirements } = body;
 
-        // Update clearance type
-        clearanceTypeQueries.update.run({
+        // Update clearance type (async)
+        await clearanceTypeQueries.update({
             id: parseInt(id),
             display_name: display_name || type.display_name,
             description: description !== undefined ? description : type.description,
-            is_faculty_based: is_faculty_based !== undefined ? (is_faculty_based ? 1 : 0) : type.is_faculty_based,
+            is_faculty_based: is_faculty_based !== undefined ? is_faculty_based : type.is_faculty_based,
         });
 
-        // Update requirements if provided
+        // Update requirements if provided (async)
         if (requirements && Array.isArray(requirements)) {
             // Delete existing requirements
-            requirementQueries.deleteByType.run(id);
+            await requirementQueries.deleteByType(id);
 
             // Add new requirements
-            requirements.forEach((req, index) => {
-                requirementQueries.create.run({
+            for (let index = 0; index < requirements.length; index++) {
+                const req = requirements[index];
+                await requirementQueries.create({
                     clearance_type_id: parseInt(id),
                     name: req.name,
                     description: req.description || null,
-                    is_required: req.is_required !== false ? 1 : 0,
+                    is_required: req.is_required !== false,
                     max_size_mb: req.max_size_mb || 10,
                     allowed_formats: req.allowed_formats || 'pdf,jpg,png',
                     sort_order: index,
                 });
-            });
+            }
         }
 
-        // Get updated type with requirements
-        const updatedType = clearanceTypeQueries.findById.get(id);
-        const updatedRequirements = requirementQueries.findByType.all(id);
+        // Get updated type with requirements (async)
+        const updatedType = await clearanceTypeQueries.findById(id);
+        const updatedRequirements = await requirementQueries.findByType(id);
 
         return successResponse('Clearance type updated successfully', {
             clearanceType: {
@@ -118,14 +119,14 @@ export async function DELETE(request, { params }) {
         }
 
         const { id } = await params;
-        const type = clearanceTypeQueries.findById.get(id);
+        const type = await clearanceTypeQueries.findById(id);
 
         if (!type) {
             return errorResponse('Clearance type not found', 404);
         }
 
-        // Deactivate instead of delete (to preserve history)
-        clearanceTypeQueries.deactivate.run(id);
+        // Deactivate instead of delete (to preserve history) (async)
+        await clearanceTypeQueries.deactivate(id);
 
         return successResponse('Clearance type deactivated successfully');
 

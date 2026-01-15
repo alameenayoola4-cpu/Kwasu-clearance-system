@@ -17,7 +17,8 @@ export async function GET() {
             return errorResponse('Access denied', 403);
         }
 
-        const officers = officerQueries.findAll.all();
+        // Async query
+        const officers = await officerQueries.findAll();
 
         return successResponse('Officers retrieved', {
             officers: officers.map(o => ({
@@ -63,16 +64,16 @@ export async function POST(request) {
             return errorResponse('Name, Staff ID, and Password are required');
         }
 
-        // Check if email already exists
+        // Check if email already exists (async)
         if (email) {
-            const existingEmail = userQueries.findByEmail.get(email);
+            const existingEmail = await userQueries.findByEmail(email);
             if (existingEmail) {
                 return errorResponse('An account with this email already exists');
             }
         }
 
-        // Check if staff_id already exists
-        const existingStaffId = officerQueries.findByStaffId.get(staff_id);
+        // Check if staff_id already exists (async)
+        const existingStaffId = await officerQueries.findByStaffId(staff_id);
         if (existingStaffId) {
             return errorResponse('An officer with this Staff ID already exists');
         }
@@ -83,8 +84,8 @@ export async function POST(request) {
         // Generate email from staff_id if not provided
         const officerEmail = email || `${staff_id.toLowerCase().replace(/\s+/g, '')}@kwasu.edu.ng`;
 
-        // Create officer
-        const result = officerQueries.create.run({
+        // Create officer (async)
+        const result = await officerQueries.create({
             email: officerEmail,
             password: hashedPassword,
             name,
@@ -96,8 +97,8 @@ export async function POST(request) {
             assigned_faculty: assigned_faculty || null,
         });
 
-        // Get created officer
-        const officer = userQueries.findById.get(result.lastInsertRowid);
+        // Get created officer (async)
+        const officer = await userQueries.findById(result.lastInsertRowid);
 
         return successResponse('Officer created successfully', {
             officer: {

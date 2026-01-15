@@ -1,4 +1,4 @@
-// GET /api/admin/seed-data - Seed KWASU faculties and departments
+// GET /api/admin/seed-data - Seed KWASU faculties, departments, and clearance types
 import { sql } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/utils';
 
@@ -50,33 +50,65 @@ const kwasuData = [
     }
 ];
 
+// Default Clearance Types
+const clearanceTypes = [
+    {
+        name: 'siwes',
+        display_name: 'SIWES Clearance',
+        description: 'Student Industrial Work Experience Scheme clearance for 300-level students',
+        is_faculty_based: false,
+        target_level: '300'
+    },
+    {
+        name: 'final',
+        display_name: 'Final Year Clearance',
+        description: 'Graduation clearance for final year students',
+        is_faculty_based: false,
+        target_level: 'final'
+    }
+];
+
 export async function GET() {
     try {
         let departmentsAdded = 0;
+        let clearanceTypesAdded = 0;
 
+        // Seed Clearance Types
+        for (const type of clearanceTypes) {
+            const existing = await sql`SELECT id FROM clearance_types WHERE name = ${type.name}`;
+
+            if (existing.length === 0) {
+                await sql`
+                    INSERT INTO clearance_types (name, display_name, description, is_faculty_based, target_level, is_active)
+                    VALUES (${type.name}, ${type.display_name}, ${type.description}, ${type.is_faculty_based}, ${type.target_level}, true)
+                `;
+                clearanceTypesAdded++;
+            }
+        }
+
+        // Seed Departments
         for (const facultyData of kwasuData) {
             for (const dept of facultyData.departments) {
-                // Check if department already exists
                 const existing = await sql`SELECT id FROM departments WHERE name = ${dept} AND faculty = ${facultyData.faculty}`;
 
                 if (existing.length === 0) {
-                    // Determine program duration (Engineering = 5 years, Medicine/Vet = 6 years, others = 4)
                     let duration = 4;
                     if (facultyData.faculty === 'Engineering and Technology') duration = 5;
                     if (facultyData.faculty === 'Veterinary Medicine') duration = 6;
 
                     await sql`
-            INSERT INTO departments (name, faculty, program_duration, is_active)
-            VALUES (${dept}, ${facultyData.faculty}, ${duration}, true)
-          `;
+                        INSERT INTO departments (name, faculty, program_duration, is_active)
+                        VALUES (${dept}, ${facultyData.faculty}, ${duration}, true)
+                    `;
                     departmentsAdded++;
                 }
             }
         }
 
-        return successResponse(`KWASU data seeded successfully. ${departmentsAdded} departments added.`, {
+        return successResponse(`KWASU data seeded successfully!`, {
             faculties: kwasuData.length,
-            departmentsAdded
+            departmentsAdded,
+            clearanceTypesAdded
         });
 
     } catch (error) {

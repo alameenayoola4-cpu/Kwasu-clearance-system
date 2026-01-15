@@ -12,6 +12,7 @@ export async function POST(request) {
         // Validate input
         const validation = validateBody(body, studentRegistrationSchema);
         if (!validation.success) {
+            console.log('Validation error:', validation.error, 'Body:', JSON.stringify(body, null, 2));
             return errorResponse(validation.error);
         }
 

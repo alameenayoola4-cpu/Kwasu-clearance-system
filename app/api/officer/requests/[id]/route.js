@@ -21,23 +21,23 @@ export async function GET(request, { params }) {
         const { id } = await params;
         const requestId = parseInt(id);
 
-        // Get request with student info
-        const clearanceRequest = requestQueries.findById.get(requestId);
+        // Get request with student info (async)
+        const clearanceRequest = await requestQueries.findById(requestId);
 
         if (!clearanceRequest) {
             return errorResponse('Request not found', 404);
         }
 
-        // Get student info
-        const student = userQueries.findById.get(clearanceRequest.student_id);
+        // Get student info (async)
+        const student = await userQueries.findById(clearanceRequest.student_id);
 
-        // Get documents
-        const documents = documentQueries.findByRequest.all(requestId);
+        // Get documents (async)
+        const documents = await documentQueries.findByRequest(requestId);
 
-        // Get reviewer info if reviewed
+        // Get reviewer info if reviewed (async)
         let reviewer = null;
         if (clearanceRequest.reviewed_by) {
-            reviewer = userQueries.findById.get(clearanceRequest.reviewed_by);
+            reviewer = await userQueries.findById(clearanceRequest.reviewed_by);
         }
 
         return successResponse('Request details retrieved', {
@@ -95,8 +95,8 @@ export async function POST(request, { params }) {
         const url = new URL(request.url);
         const action = url.searchParams.get('action');
 
-        // Get the request
-        const clearanceRequest = requestQueries.findById.get(requestId);
+        // Get the request (async)
+        const clearanceRequest = await requestQueries.findById(requestId);
 
         if (!clearanceRequest) {
             return errorResponse('Request not found', 404);
@@ -107,8 +107,8 @@ export async function POST(request, { params }) {
         }
 
         if (action === 'approve') {
-            // Approve the request
-            requestQueries.approve.run(tokenUser.id, requestId);
+            // Approve the request (async)
+            await requestQueries.approve(tokenUser.id, requestId);
 
             return successResponse('Request approved successfully');
 
@@ -123,8 +123,8 @@ export async function POST(request, { params }) {
 
             const { reason } = validation.data;
 
-            // Reject the request
-            requestQueries.reject.run(reason, tokenUser.id, requestId);
+            // Reject the request (async)
+            await requestQueries.reject(reason, tokenUser.id, requestId);
 
             return successResponse('Request rejected');
 

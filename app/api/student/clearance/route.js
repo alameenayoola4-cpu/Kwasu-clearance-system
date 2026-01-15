@@ -28,8 +28,8 @@ export async function POST(request) {
 
         const { type } = validation.data;
 
-        // Check if student already has an active request of this type
-        const existingRequest = requestQueries.existsForStudent.get(tokenUser.id, type, 'rejected');
+        // Check if student already has an active request of this type (async)
+        const existingRequest = await requestQueries.existsForStudent(tokenUser.id, type, 'rejected');
 
         if (existingRequest) {
             return errorResponse(`You already have an active ${type.toUpperCase()} clearance request`);
@@ -38,15 +38,15 @@ export async function POST(request) {
         // Generate unique request ID
         const requestId = generateRequestId();
 
-        // Create clearance request
-        const result = requestQueries.create.run({
+        // Create clearance request (async)
+        const result = await requestQueries.create({
             request_id: requestId,
             student_id: tokenUser.id,
             type,
         });
 
-        // Get created request
-        const newRequest = requestQueries.findById.get(result.lastInsertRowid);
+        // Get created request (async)
+        const newRequest = await requestQueries.findById(result.lastInsertRowid);
 
         return successResponse('Clearance request submitted successfully', {
             request: {
@@ -77,8 +77,8 @@ export async function GET() {
             return errorResponse('Access denied', 403);
         }
 
-        // Get all student's requests
-        const requests = requestQueries.findByStudent.all(tokenUser.id);
+        // Get all student's requests (async)
+        const requests = await requestQueries.findByStudent(tokenUser.id);
 
         return successResponse('Clearance requests retrieved', { requests });
 
