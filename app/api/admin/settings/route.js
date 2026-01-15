@@ -15,8 +15,8 @@ export async function GET(request) {
             );
         }
 
-        // Get all settings
-        const settingsRows = settingsQueries.getAll.all();
+        // Get all settings (async)
+        const settingsRows = await settingsQueries.getAll();
 
         // Convert to object format
         const settings = {};
@@ -68,11 +68,11 @@ export async function PUT(request) {
             );
         }
 
-        // Update each setting
+        // Update each setting (async)
         for (const [key, value] of Object.entries(settings)) {
             // Convert values to strings for storage
             const stringValue = typeof value === 'boolean' ? value.toString() : String(value);
-            settingsQueries.set.run(key, stringValue);
+            await settingsQueries.set(key, stringValue);
         }
 
         return NextResponse.json({
