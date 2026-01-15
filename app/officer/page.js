@@ -1,12 +1,13 @@
 'use client';
 
-// Officer Dashboard
+// Officer Dashboard - Redesigned to match reference layout
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import MobileWarning from '../components/MobileWarning';
 import { useAuthSync } from '../hooks/useAuthSync';
+import '../student/student.css';
 import './officer.css';
 
 export default function OfficerDashboard() {
@@ -14,8 +15,10 @@ export default function OfficerDashboard() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
     const [error, setError] = useState('');
-    const [filter, setFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('all');
     const [typeFilter, setTypeFilter] = useState('all');
+    const [sortBy, setSortBy] = useState('newest');
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Listen for auth changes from other tabs
     useAuthSync('officer');
@@ -43,10 +46,8 @@ export default function OfficerDashboard() {
 
     const handleLogout = async () => {
         try {
-            // Broadcast logout to other tabs
             const { broadcastLogout } = await import('../hooks/useAuthSync');
             broadcastLogout();
-
             await fetch('/api/auth/logout', { method: 'POST' });
             router.push('/login');
         } catch (err) {
@@ -55,34 +56,43 @@ export default function OfficerDashboard() {
     };
 
     const getStatusBadge = (status) => {
-        const classes = {
-            pending: 'badge badge-pending',
-            approved: 'badge badge-approved',
-            rejected: 'badge badge-rejected',
+        const statusConfig = {
+            pending: { class: 'status-pending', label: 'Pending' },
+            approved: { class: 'status-approved', label: 'Approved' },
+            rejected: { class: 'status-rejected', label: 'Rejected' },
+            flagged: { class: 'status-flagged', label: 'Flagged' },
         };
-        return <span className={classes[status]}>{status}</span>;
+        const config = statusConfig[status] || { class: '', label: status };
+        return <span className={`status-badge ${config.class}`}>{config.label}</span>;
     };
 
     const getTypeBadge = (type) => {
-        const classes = {
-            siwes: 'badge badge-siwes',
-            final: 'badge badge-final',
-            faculty: 'badge badge-faculty',
+        const typeConfig = {
+            siwes: { class: 'type-siwes', label: 'SIWES' },
+            final: { class: 'type-final', label: 'Final Clearance' },
+            faculty: { class: 'type-faculty', label: 'Faculty Clearance' },
         };
-        const labels = {
-            siwes: 'SIWES',
-            final: 'Final Clearance',
-            faculty: 'Faculty Clearance',
-        };
-        return <span className={classes[type] || 'badge'}>{labels[type] || type}</span>;
+        const config = typeConfig[type] || { class: '', label: type };
+        return <span className={`type-badge ${config.class}`}>{config.label}</span>;
     };
 
-    // Filter requests
-    const filteredRequests = data?.requests?.filter(req => {
-        if (filter !== 'all' && req.status !== filter) return false;
-        if (typeFilter !== 'all' && req.type !== typeFilter) return false;
-        return true;
-    }) || [];
+    // Filter and sort requests
+    const filteredRequests = (data?.requests || [])
+        .filter(req => {
+            if (statusFilter !== 'all' && req.status !== statusFilter) return false;
+            if (typeFilter !== 'all' && req.type !== typeFilter) return false;
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                return req.student_name?.toLowerCase().includes(query) ||
+                    req.matric_no?.toLowerCase().includes(query);
+            }
+            return true;
+        })
+        .sort((a, b) => {
+            if (sortBy === 'newest') return new Date(b.created_at) - new Date(a.created_at);
+            if (sortBy === 'oldest') return new Date(a.created_at) - new Date(b.created_at);
+            return 0;
+        });
 
     if (loading) {
         return (
@@ -106,7 +116,6 @@ export default function OfficerDashboard() {
 
     return (
         <div className="dashboard-layout">
-            {/* Mobile Warning for Officer */}
             <MobileWarning role="officer" />
 
             {/* Sidebar */}
@@ -145,69 +154,80 @@ export default function OfficerDashboard() {
                     </Link>
                     <Link href="/officer/settings" className="nav-item">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="3" /><path d="M12 1v6m0 6v10" />
+                            <circle cx="12" cy="12" r="3" />
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                         </svg>
                         Settings
                     </Link>
                 </nav>
 
-                <div className="sidebar-user">
-                    <div className="user-avatar">
-                        {data?.user?.name?.charAt(0)?.toUpperCase()}
-                    </div>
-                    <div className="user-details">
-                        <span className="user-name">{data?.user?.name}</span>
-                        <span className="user-dept">{data?.user?.department}</span>
+                {/* User Profile at Bottom */}
+                <div className="sidebar-footer">
+                    <div className="sidebar-user-profile">
+                        <div className="user-avatar-lg">
+                            {data?.user?.name?.charAt(0)?.toUpperCase()}
+                        </div>
+                        <div className="user-info">
+                            <span className="user-name">{data?.user?.name}</span>
+                            <span className="user-dept">{data?.user?.department}</span>
+                        </div>
                     </div>
                 </div>
             </aside>
 
             {/* Main Content */}
             <main className="dashboard-main">
-                {/* Top Bar */}
+                {/* Top Header Bar */}
                 <header className="topbar">
                     <div className="topbar-left">
                         <h1>Officer Clearance Dashboard</h1>
-                        {data?.user?.assigned_type_name && (
-                            <span className="badge badge-primary" style={{ marginLeft: '1rem' }}>
-                                {data.user.assigned_type_name}
-                                {data.user.assigned_faculty && ` - ${data.user.assigned_faculty}`}
-                            </span>
-                        )}
                     </div>
                     <div className="topbar-right">
                         <div className="search-box">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
                             </svg>
-                            <input type="text" placeholder="Search Matric No or Name..." />
+                            <input
+                                type="text"
+                                placeholder="Search Matric No or Name..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
-                        <button className="notification-btn">
+                        <button className="icon-btn notification-btn">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                             </svg>
-                            <span className="notification-dot"></span>
+                            {data?.stats?.pending > 0 && <span className="notification-dot"></span>}
                         </button>
-                        <button onClick={handleLogout} className="btn btn-ghost btn-sm">
-                            Logout
+                        <button className="icon-btn help-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
                         </button>
                     </div>
                 </header>
 
                 {/* Dashboard Content */}
                 <div className="dashboard-content">
-                    {/* Stats Grid */}
-                    <div className="stats-grid">
+                    {/* Stats Cards Row */}
+                    <div className="stats-grid stats-grid-4">
                         <div className="stat-card">
                             <div className="stat-icon pending">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
                                 </svg>
                             </div>
                             <div className="stat-info">
                                 <span className="stat-label">PENDING REVIEWS</span>
-                                <span className="stat-value">{data?.stats?.pending || 0}</span>
-                                <span className="stat-change positive">+5 new</span>
+                                <div className="stat-value-row">
+                                    <span className="stat-value">{data?.stats?.pending || 0}</span>
+                                    <span className="stat-change positive">+5 new</span>
+                                </div>
                             </div>
                         </div>
 
@@ -220,8 +240,10 @@ export default function OfficerDashboard() {
                             </div>
                             <div className="stat-info">
                                 <span className="stat-label">COMPLETED TODAY</span>
-                                <span className="stat-value">{data?.stats?.completedToday || 0}</span>
-                                <span className="stat-change">Target: 20</span>
+                                <div className="stat-value-row">
+                                    <span className="stat-value">{data?.stats?.completedToday || 0}</span>
+                                    <span className="stat-target">Target: 20</span>
+                                </div>
                             </div>
                         </div>
 
@@ -229,7 +251,8 @@ export default function OfficerDashboard() {
                             <div className="stat-icon students">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                    <circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                                     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                                 </svg>
                             </div>
@@ -252,39 +275,71 @@ export default function OfficerDashboard() {
                         </div>
                     </div>
 
-                    {/* Requests Table */}
+                    {/* Requests Section */}
                     <div className="requests-section">
                         <div className="requests-header">
-                            <div>
+                            <div className="requests-title">
                                 <h2>Student Clearance Requests</h2>
                                 <p>Review and approve pending documentation.</p>
                             </div>
-                            <div className="requests-filters">
-                                <div className="filter-tabs">
-                                    <button
-                                        className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
-                                        onClick={() => setFilter('all')}
-                                    >
-                                        All Requests
-                                    </button>
-                                    <button
-                                        className={`filter-tab ${typeFilter === 'siwes' ? 'active' : ''}`}
-                                        onClick={() => setTypeFilter(typeFilter === 'siwes' ? 'all' : 'siwes')}
-                                    >
-                                        SIWES Clearance
-                                    </button>
-                                    <button
-                                        className={`filter-tab ${typeFilter === 'final' ? 'active' : ''}`}
-                                        onClick={() => setTypeFilter(typeFilter === 'final' ? 'all' : 'final')}
-                                    >
-                                        Final Year Clearance
-                                    </button>
+                            <div className="requests-controls">
+                                <div className="filter-dropdown">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                                    </svg>
+                                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                                        <option value="all">Filter Type</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="approved">Approved</option>
+                                        <option value="rejected">Rejected</option>
+                                    </select>
+                                </div>
+                                <div className="sort-dropdown">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                        <line x1="16" y1="2" x2="16" y2="6" />
+                                        <line x1="8" y1="2" x2="8" y2="6" />
+                                        <line x1="3" y1="10" x2="21" y2="10" />
+                                    </svg>
+                                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                                        <option value="newest">Sort: Newest</option>
+                                        <option value="oldest">Sort: Oldest</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
 
+                        {/* Type Filter Tabs */}
+                        <div className="filter-tabs-row">
+                            <button
+                                className={`filter-tab ${typeFilter === 'all' ? 'active' : ''}`}
+                                onClick={() => setTypeFilter('all')}
+                            >
+                                All Requests
+                            </button>
+                            <button
+                                className={`filter-tab ${typeFilter === 'siwes' ? 'active' : ''}`}
+                                onClick={() => setTypeFilter('siwes')}
+                            >
+                                SIWES Clearance
+                            </button>
+                            <button
+                                className={`filter-tab ${typeFilter === 'final' ? 'active' : ''}`}
+                                onClick={() => setTypeFilter('final')}
+                            >
+                                Final Year Clearance
+                            </button>
+                            <button
+                                className={`filter-tab ${typeFilter === 'faculty' ? 'active' : ''}`}
+                                onClick={() => setTypeFilter('faculty')}
+                            >
+                                Faculty Clearance
+                            </button>
+                        </div>
+
+                        {/* Requests Table */}
                         <div className="table-container">
-                            <table className="table">
+                            <table className="data-table">
                                 <thead>
                                     <tr>
                                         <th>STUDENT NAME</th>
@@ -303,12 +358,12 @@ export default function OfficerDashboard() {
                                                     <div className="student-avatar">
                                                         {req.student_name?.split(' ').map(n => n[0]).join('').substring(0, 2)}
                                                     </div>
-                                                    <span>{req.student_name}</span>
+                                                    <span className="student-name">{req.student_name}</span>
                                                 </div>
                                             </td>
-                                            <td>{req.matric_no}</td>
+                                            <td className="matric-cell">{req.matric_no}</td>
                                             <td>{getTypeBadge(req.type)}</td>
-                                            <td>{new Date(req.created_at).toLocaleDateString()}</td>
+                                            <td>{new Date(req.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
                                             <td>{getStatusBadge(req.status)}</td>
                                             <td>
                                                 {req.status === 'pending' ? (
@@ -316,7 +371,7 @@ export default function OfficerDashboard() {
                                                         Review
                                                     </Link>
                                                 ) : (
-                                                    <Link href={`/officer/review/${req.id}`} className="btn btn-ghost btn-sm">
+                                                    <Link href={`/officer/review/${req.id}`} className="btn btn-outline btn-sm">
                                                         View
                                                     </Link>
                                                 )}
@@ -325,8 +380,15 @@ export default function OfficerDashboard() {
                                     ))}
                                     {filteredRequests.length === 0 && (
                                         <tr>
-                                            <td colSpan="6" className="text-center text-muted" style={{ padding: '40px' }}>
-                                                No requests found
+                                            <td colSpan="6" className="empty-state">
+                                                <div className="empty-message">
+                                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                                        <polyline points="14 2 14 8 20 8" />
+                                                    </svg>
+                                                    <p>No requests found</p>
+                                                    <span>Requests matching your filters will appear here.</span>
+                                                </div>
                                             </td>
                                         </tr>
                                     )}
@@ -334,16 +396,24 @@ export default function OfficerDashboard() {
                             </table>
                         </div>
 
+                        {/* Table Footer with Pagination */}
                         <div className="table-footer">
-                            <span>Showing {filteredRequests.length} of {data?.requests?.length || 0} requests</span>
+                            <span className="showing-text">
+                                Showing {filteredRequests.length} of {data?.requests?.length || 0} pending requests
+                            </span>
+                            <div className="pagination">
+                                <button className="page-btn" disabled>&lt;</button>
+                                <button className="page-btn active">1</button>
+                                <button className="page-btn" disabled>&gt;</button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Info Cards */}
+                    {/* Info Cards Row */}
                     <div className="info-grid">
-                        <div className="info-card">
+                        <div className="info-card notice-card">
                             <div className="info-icon">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <circle cx="12" cy="12" r="10" />
                                     <line x1="12" y1="16" x2="12" y2="12" />
                                     <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -354,8 +424,13 @@ export default function OfficerDashboard() {
                                 <p>The deadline for SIWES documentation submission for the current batch is Friday, November 15th. Please prioritize SIWES reviews to ensure students meet the industry deadline.</p>
                             </div>
                         </div>
-                        <div className="info-card office-hours">
-                            <h4>OFFICE HOURS</h4>
+                        <div className="info-card office-hours-card">
+                            <div className="office-hours-header">
+                                <h4>OFFICE HOURS</h4>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                                </svg>
+                            </div>
                             <div className="hours-row">
                                 <span>Mon-Fri</span>
                                 <span className="hours-value">08:00 - 16:00</span>
