@@ -1,38 +1,54 @@
 'use client';
 
 // Student Registration Page
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import '../login/auth.css';
 
-// KWASU Faculties and Departments
-const FACULTIES = {
-    'Physical Sciences': ['Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Statistics'],
-    'Engineering': ['Mechanical Engineering', 'Electrical Engineering', 'Civil Engineering', 'Chemical Engineering'],
-    'Health Sciences': ['Medicine', 'Nursing', 'Pharmacy', 'Medical Laboratory Science'],
-    'Law': ['Law'],
-    'Agriculture': ['Agricultural Economics', 'Animal Science', 'Crop Science'],
-    'Arts': ['English', 'History', 'Religious Studies', 'Philosophy'],
-    'Education': ['Educational Management', 'Guidance and Counselling', 'Science Education'],
-    'Social Sciences': ['Economics', 'Political Science', 'Sociology', 'Mass Communication'],
-};
-
 export default function RegisterPage() {
     const router = useRouter();
+    const [faculties, setFaculties] = useState([]);
+    const [loadingFaculties, setLoadingFaculties] = useState(true);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         matric_no: '',
         faculty: '',
         department: '',
+        level: '',
         password: '',
         confirmPassword: '',
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
+    // Fetch faculties and departments on mount
+    useEffect(() => {
+        fetchFaculties();
+    }, []);
+
+    const fetchFaculties = async () => {
+        try {
+            const response = await fetch('/api/departments');
+            const data = await response.json();
+            if (data.success) {
+                setFaculties(data.data.faculties);
+            }
+        } catch (err) {
+            console.error('Failed to fetch faculties:', err);
+        } finally {
+            setLoadingFaculties(false);
+        }
+    };
+
+    // Get departments for selected faculty
+    const getDepartments = () => {
+        const selectedFaculty = faculties.find(f => f.name === formData.faculty);
+        return selectedFaculty?.departments || [];
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -67,7 +83,15 @@ export default function RegisterPage() {
             const response = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    name: formData.name,
+                    email: formData.email,
+                    matric_no: formData.matric_no,
+                    faculty: formData.faculty,
+                    department: formData.department,
+                    level: parseInt(formData.level) || 100,
+                    password: formData.password,
+                }),
             });
 
             const data = await response.json();
@@ -214,10 +238,11 @@ export default function RegisterPage() {
                                     value={formData.faculty}
                                     onChange={handleChange}
                                     required
+                                    disabled={loadingFaculties}
                                 >
-                                    <option value="">Select Faculty</option>
-                                    {Object.keys(FACULTIES).map(faculty => (
-                                        <option key={faculty} value={faculty}>{faculty}</option>
+                                    <option value="">{loadingFaculties ? 'Loading...' : 'Select Faculty'}</option>
+                                    {faculties.map(faculty => (
+                                        <option key={faculty.name} value={faculty.name}>{faculty.name}</option>
                                     ))}
                                 </select>
                             </div>
@@ -233,11 +258,30 @@ export default function RegisterPage() {
                                     disabled={!formData.faculty}
                                 >
                                     <option value="">Select Department</option>
-                                    {formData.faculty && FACULTIES[formData.faculty]?.map(dept => (
-                                        <option key={dept} value={dept}>{dept}</option>
+                                    {getDepartments().map(dept => (
+                                        <option key={dept.id} value={dept.name}>{dept.name}</option>
                                     ))}
                                 </select>
                             </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Current Level</label>
+                            <select
+                                name="level"
+                                className="form-select"
+                                value={formData.level}
+                                onChange={handleChange}
+                                required
+                            >
+                                <option value="">Select Level</option>
+                                <option value="100">100 Level</option>
+                                <option value="200">200 Level</option>
+                                <option value="300">300 Level</option>
+                                <option value="400">400 Level</option>
+                                <option value="500">500 Level</option>
+                                <option value="600">600 Level</option>
+                            </select>
                         </div>
 
                         <div className="form-group">
