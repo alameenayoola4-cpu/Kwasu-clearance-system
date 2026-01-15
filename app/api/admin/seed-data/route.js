@@ -65,6 +65,13 @@ const clearanceTypes = [
         description: 'Graduation clearance for final year students',
         is_faculty_based: false,
         target_level: 'final'
+    },
+    {
+        name: 'faculty',
+        display_name: 'Faculty Clearance',
+        description: 'Department and faculty-level clearance for students',
+        is_faculty_based: true,
+        target_level: 'all'
     }
 ];
 

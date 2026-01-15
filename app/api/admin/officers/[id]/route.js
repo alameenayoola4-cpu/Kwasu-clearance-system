@@ -66,12 +66,13 @@ export async function PUT(request, { params }) {
         }
 
         const body = await request.json();
-        const { name, phone, department, faculty, assigned_clearance_type, assigned_faculty, status } = body;
+        const { name, email, phone, department, faculty, assigned_clearance_type, assigned_faculty, status } = body;
 
         // Update officer (async)
         await officerQueries.update({
             id: parseInt(id),
             name: name || officer.name,
+            email: email || officer.email,
             phone: phone !== undefined ? phone : officer.phone,
             department: department !== undefined ? department : officer.department,
             faculty: faculty !== undefined ? faculty : officer.faculty,

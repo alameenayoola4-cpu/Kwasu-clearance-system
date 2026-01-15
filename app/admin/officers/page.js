@@ -14,6 +14,8 @@ export default function OfficersPage() {
     const [officers, setOfficers] = useState([]);
     const [clearanceTypes, setClearanceTypes] = useState([]);
     const [showModal, setShowModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingOfficer, setEditingOfficer] = useState(null);
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
         name: '',
@@ -24,6 +26,16 @@ export default function OfficersPage() {
         faculty: '',
         assigned_clearance_type: '',
         assigned_faculty: '',
+    });
+    const [editFormData, setEditFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        department: '',
+        faculty: '',
+        assigned_clearance_type: '',
+        assigned_faculty: '',
+        status: '',
     });
 
     useEffect(() => {
@@ -87,20 +99,91 @@ export default function OfficersPage() {
         }
     };
 
-    const handleStatusChange = async (id, newStatus) => {
+    const handleEdit = (officer) => {
+        setEditingOfficer(officer);
+        setEditFormData({
+            name: officer.name || '',
+            email: officer.email || '',
+            phone: officer.phone || '',
+            department: officer.department || '',
+            faculty: officer.faculty || '',
+            assigned_clearance_type: officer.assigned_clearance_type || '',
+            assigned_faculty: officer.assigned_faculty || '',
+            status: officer.status || 'active',
+        });
+        setShowEditModal(true);
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+
         try {
-            await fetch(`/api/admin/officers/${id}`, {
+            const response = await fetch(`/api/admin/officers/${editingOfficer.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editFormData),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Failed to update officer');
+            }
+
+            setShowEditModal(false);
+            setEditingOfficer(null);
+            fetchData();
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!confirm('Are you sure you want to deactivate this officer?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/admin/officers/${id}`, {
+                method: 'DELETE',
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Failed to deactivate officer');
+            }
+
+            fetchData();
+        } catch (err) {
+            console.error('Delete error:', err);
+            alert('Failed to deactivate officer: ' + err.message);
+        }
+    };
+
+    const handleStatusToggle = async (id, currentStatus) => {
+        const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+
+        try {
+            const response = await fetch(`/api/admin/officers/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus }),
             });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Failed to update status');
+            }
+
             fetchData();
         } catch (err) {
             console.error('Status update error:', err);
+            alert('Failed to update status: ' + err.message);
         }
     };
-
-
 
     if (loading) {
         return (
@@ -187,7 +270,11 @@ export default function OfficersPage() {
                                             </td>
                                             <td>
                                                 <div className="action-buttons">
-                                                    <button className="action-btn" title="Edit">
+                                                    <button
+                                                        className="action-btn"
+                                                        title="Edit"
+                                                        onClick={() => handleEdit(officer)}
+                                                    >
                                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
@@ -195,7 +282,7 @@ export default function OfficersPage() {
                                                     </button>
                                                     <button
                                                         className={`action-btn ${officer.status === 'active' ? 'danger' : ''}`}
-                                                        onClick={() => handleStatusChange(officer.id, officer.status === 'active' ? 'inactive' : 'active')}
+                                                        onClick={() => handleStatusToggle(officer.id, officer.status)}
                                                         title={officer.status === 'active' ? 'Deactivate' : 'Activate'}
                                                     >
                                                         {officer.status === 'active' ? (
@@ -338,6 +425,117 @@ export default function OfficersPage() {
                                 </button>
                                 <button type="submit" className="btn btn-primary">
                                     Create Officer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Officer Modal */}
+            {showEditModal && editingOfficer && (
+                <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Edit Officer</h2>
+                            <button className="modal-close" onClick={() => setShowEditModal(false)}>×</button>
+                        </div>
+                        <form onSubmit={handleEditSubmit}>
+                            <div className="modal-body">
+                                {error && <div className="alert alert-error">{error}</div>}
+
+                                <div className="form-group">
+                                    <label className="form-label">Full Name</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        value={editFormData.name}
+                                        onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Email</label>
+                                    <input
+                                        type="email"
+                                        className="form-input"
+                                        value={editFormData.email}
+                                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">Phone Number</label>
+                                        <input
+                                            type="tel"
+                                            className="form-input"
+                                            value={editFormData.phone}
+                                            onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Department</label>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            value={editFormData.department}
+                                            onChange={(e) => setEditFormData({ ...editFormData, department: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Assigned Clearance Type</label>
+                                    <select
+                                        className="form-input"
+                                        value={editFormData.assigned_clearance_type}
+                                        onChange={(e) => setEditFormData({ ...editFormData, assigned_clearance_type: e.target.value })}
+                                    >
+                                        <option value="">Select Type</option>
+                                        {clearanceTypes.map((type) => (
+                                            <option key={type.id} value={type.id}>{type.display_name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Assigned Faculty</label>
+                                    <select
+                                        className="form-input"
+                                        value={editFormData.assigned_faculty}
+                                        onChange={(e) => setEditFormData({ ...editFormData, assigned_faculty: e.target.value })}
+                                    >
+                                        <option value="">All Faculties</option>
+                                        <option value="Engineering">Engineering</option>
+                                        <option value="Sciences">Sciences</option>
+                                        <option value="Agriculture">Agriculture</option>
+                                        <option value="Arts">Arts</option>
+                                        <option value="Education">Education</option>
+                                        <option value="Social Sciences">Social Sciences</option>
+                                        <option value="Law">Law</option>
+                                        <option value="Information Technology">Information Technology</option>
+                                    </select>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Status</label>
+                                    <select
+                                        className="form-input"
+                                        value={editFormData.status}
+                                        onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                                    >
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-outline" onClick={() => setShowEditModal(false)}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="btn btn-primary">
+                                    Update Officer
                                 </button>
                             </div>
                         </form>
