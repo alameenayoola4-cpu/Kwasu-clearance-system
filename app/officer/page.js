@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import MobileWarning from '../components/MobileWarning';
+import CustomDropdown from '../components/CustomDropdown';
 import { useAuthSync } from '../hooks/useAuthSync';
 import '../student/student.css';
 import './officer.css';
@@ -277,29 +278,37 @@ export default function OfficerDashboard() {
                                 <p>Review and approve pending documentation.</p>
                             </div>
                             <div className="requests-controls">
-                                <div className="filter-dropdown">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                                    </svg>
-                                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                                        <option value="all">Filter Type</option>
-                                        <option value="pending">Pending</option>
-                                        <option value="approved">Approved</option>
-                                        <option value="rejected">Rejected</option>
-                                    </select>
-                                </div>
-                                <div className="sort-dropdown">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                                        <line x1="16" y1="2" x2="16" y2="6" />
-                                        <line x1="8" y1="2" x2="8" y2="6" />
-                                        <line x1="3" y1="10" x2="21" y2="10" />
-                                    </svg>
-                                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                                        <option value="newest">Sort: Newest</option>
-                                        <option value="oldest">Sort: Oldest</option>
-                                    </select>
-                                </div>
+                                <CustomDropdown
+                                    value={statusFilter}
+                                    onChange={setStatusFilter}
+                                    options={[
+                                        { value: 'all', label: 'All Status' },
+                                        { value: 'pending', label: 'Pending' },
+                                        { value: 'approved', label: 'Approved' },
+                                        { value: 'rejected', label: 'Rejected' },
+                                    ]}
+                                    icon={
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                                        </svg>
+                                    }
+                                />
+                                <CustomDropdown
+                                    value={sortBy}
+                                    onChange={setSortBy}
+                                    options={[
+                                        { value: 'newest', label: 'Sort: Newest' },
+                                        { value: 'oldest', label: 'Sort: Oldest' },
+                                    ]}
+                                    icon={
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                            <line x1="16" y1="2" x2="16" y2="6" />
+                                            <line x1="8" y1="2" x2="8" y2="6" />
+                                            <line x1="3" y1="10" x2="21" y2="10" />
+                                        </svg>
+                                    }
+                                />
                             </div>
                         </div>
 

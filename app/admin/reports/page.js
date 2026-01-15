@@ -1,38 +1,30 @@
 'use client';
 
-// Admin Reports Page
+// Admin Analytics & Reports Page - Merged Dashboard
 import { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
+import MobileWarning from '../../components/MobileWarning';
+import { useAuthSync } from '../../hooks/useAuthSync';
 import '../../student/student.css';
 import '../admin.css';
 
 export default function ReportsPage() {
     const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState({
-        totalStudents: 0,
-        totalOfficers: 0,
-        pendingClearances: 0,
-        approvedClearances: 0,
-        rejectedClearances: 0,
-    });
-    const [dateRange, setDateRange] = useState('30days');
+    const [analytics, setAnalytics] = useState(null);
+    const [dateRange, setDateRange] = useState('6months');
+
+    useAuthSync('admin');
 
     useEffect(() => {
-        fetchReportData();
+        fetchData();
     }, [dateRange]);
 
-    const fetchReportData = async () => {
+    const fetchData = async () => {
         try {
-            const response = await fetch('/api/admin/dashboard');
+            const response = await fetch('/api/admin/analytics');
             if (response.ok) {
-                const data = await response.json();
-                setStats({
-                    totalStudents: data.stats?.totalStudents || 0,
-                    totalOfficers: data.stats?.totalOfficers || 0,
-                    pendingClearances: data.stats?.pendingClearances || 0,
-                    approvedClearances: data.stats?.approvedClearances || 0,
-                    rejectedClearances: data.stats?.rejectedClearances || 0,
-                });
+                const result = await response.json();
+                setAnalytics(result.data);
             }
         } catch (err) {
             console.error('Fetch error:', err);
@@ -41,17 +33,16 @@ export default function ReportsPage() {
         }
     };
 
-    const handleExport = async (reportType = 'statistics') => {
+    const handleExport = async () => {
         try {
             const response = await fetch('/api/admin/reports', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reportType }),
+                body: JSON.stringify({ reportType: 'statistics' }),
             });
 
             if (response.ok) {
                 const data = await response.json();
-                // Create and download file
                 const blob = new Blob([data.data.content], { type: 'text/plain' });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
@@ -67,17 +58,36 @@ export default function ReportsPage() {
         }
     };
 
+    // Calculate totals and percentages
+    const totalRequests = (analytics?.statusDistribution?.approved || 0) +
+        (analytics?.statusDistribution?.pending || 0) +
+        (analytics?.statusDistribution?.rejected || 0);
+
+    const approvedPercent = totalRequests > 0
+        ? Math.round((analytics?.statusDistribution?.approved / totalRequests) * 100)
+        : 0;
+    const pendingPercent = totalRequests > 0
+        ? Math.round((analytics?.statusDistribution?.pending / totalRequests) * 100)
+        : 0;
+    const rejectedPercent = totalRequests > 0
+        ? Math.round((analytics?.statusDistribution?.rejected / totalRequests) * 100)
+        : 0;
+
+    // Calculate max for chart scaling
+    const maxMonthly = analytics?.monthlyTrends?.reduce((max, m) => Math.max(max, m.total), 0) || 10;
+
     if (loading) {
         return (
             <div className="dashboard-loading">
-                <div className="loading-spinner"></div>
-                <p>Loading reports...</p>
+                <div className="spinner spinner-lg"></div>
+                <p>Loading analytics...</p>
             </div>
         );
     }
 
     return (
         <div className="dashboard-layout">
+            <MobileWarning role="admin" />
             <AdminSidebar userName="Admin Central" />
 
             <main className="dashboard-main">
@@ -87,281 +97,306 @@ export default function ReportsPage() {
                         <nav className="breadcrumb-nav">
                             <span>Dashboard</span>
                             <span>&gt;</span>
-                            <span className="current">Reports</span>
+                            <span className="current">Analytics & Reports</span>
                         </nav>
-                        <h1>Reports & Analytics</h1>
+                        <h1>Admin Analytics & Reports Dashboard</h1>
                     </div>
                     <div className="topbar-right">
-                        <select
-                            className="filter-select"
-                            value={dateRange}
-                            onChange={(e) => setDateRange(e.target.value)}
-                        >
-                            <option value="7days">Last 7 Days</option>
-                            <option value="30days">Last 30 Days</option>
-                            <option value="90days">Last 90 Days</option>
-                            <option value="year">This Year</option>
-                        </select>
-                        <button className="btn btn-outline" onClick={() => handleExport('statistics')}>
+                        <div className="date-selector">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z" />
+                            </svg>
+                            <select
+                                value={dateRange}
+                                onChange={(e) => setDateRange(e.target.value)}
+                            >
+                                <option value="3months">Jan 2024 - Mar 2024</option>
+                                <option value="6months">Jan 2024 - Jun 2024</option>
+                                <option value="year">Jan 2024 - Dec 2024</option>
+                            </select>
+                        </div>
+                        <button className="btn btn-primary" onClick={handleExport}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                 <polyline points="7 10 12 15 17 10" />
                                 <line x1="12" y1="15" x2="12" y2="3" />
                             </svg>
-                            Export
+                            Export Report
                         </button>
                     </div>
                 </header>
 
                 {/* Dashboard Content */}
                 <div className="dashboard-content">
-                    {/* Stats Overview */}
-                    <div className="stats-grid admin-stats">
-                        <div className="stat-card">
-                            <div className="stat-icon students">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 12.75c1.63 0 3.07.39 4.24.9c1.08.48 1.76 1.56 1.76 2.73V18H6v-1.62c0-1.17.68-2.25 1.76-2.73c1.17-.51 2.61-.9 4.24-.9zM4 13c1.1 0 2-.9 2-2s-.9-2-2-2s-2 .9-2 2s.9 2 2 2zm1.13 1.1c-.37-.06-.74-.1-1.13-.1c-.99 0-1.93.21-2.78.58A2.01 2.01 0 0 0 0 16.43V18h4.5v-1.62c0-.83.23-1.61.63-2.28zM20 13c1.1 0 2-.9 2-2s-.9-2-2-2s-2 .9-2 2s.9 2 2 2zm4 3.43c0-.81-.48-1.53-1.22-1.85A6.95 6.95 0 0 0 20 14c-.39 0-.76.04-1.13.1c.4.67.63 1.45.63 2.28V18H24v-1.57zM12 6c1.66 0 3 1.34 3 3s-1.34 3-3 3s-3-1.34-3-3s1.34-3 3-3z" />
-                                </svg>
+                    {/* Top Charts Row */}
+                    <div className="analytics-row">
+                        {/* Line Chart - Clearance Completion Trends */}
+                        <div className="chart-card chart-wide">
+                            <div className="chart-header-row">
+                                <div>
+                                    <h3>Clearance Completion Trends</h3>
+                                    <p className="chart-subtitle">Monthly volume of approved vs pending requests</p>
+                                </div>
+                                <div className="chart-legend-inline">
+                                    <span className="legend-dot">
+                                        <span className="dot" style={{ background: '#1e8449' }}></span>
+                                        APPROVED
+                                    </span>
+                                    <span className="legend-dot">
+                                        <span className="dot" style={{ background: '#e5e7eb' }}></span>
+                                        TOTAL
+                                    </span>
+                                </div>
                             </div>
-                            <span className="stat-label">TOTAL STUDENTS</span>
-                            <span className="stat-value">{stats.totalStudents.toLocaleString()}</span>
+                            <div className="line-chart-container">
+                                <svg className="line-chart" viewBox="0 0 600 180" preserveAspectRatio="none">
+                                    {/* Grid lines */}
+                                    <line x1="0" y1="0" x2="600" y2="0" className="grid-line" />
+                                    <line x1="0" y1="45" x2="600" y2="45" className="grid-line" />
+                                    <line x1="0" y1="90" x2="600" y2="90" className="grid-line" />
+                                    <line x1="0" y1="135" x2="600" y2="135" className="grid-line" />
+                                    <line x1="0" y1="180" x2="600" y2="180" className="grid-line" />
+
+                                    {/* Trend line */}
+                                    {analytics?.monthlyTrends?.length > 0 && (
+                                        <>
+                                            <defs>
+                                                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                    <stop offset="0%" stopColor="rgba(30, 132, 73, 0.3)" />
+                                                    <stop offset="100%" stopColor="rgba(30, 132, 73, 0)" />
+                                                </linearGradient>
+                                            </defs>
+                                            <path
+                                                d={`M ${analytics.monthlyTrends.map((m, i) => {
+                                                    const x = (i / (analytics.monthlyTrends.length - 1 || 1)) * 600;
+                                                    const y = 180 - (m.approved / maxMonthly) * 160;
+                                                    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                                                }).join(' ')} L 600 180 L 0 180 Z`}
+                                                fill="url(#lineGradient)"
+                                            />
+                                            <path
+                                                d={`M ${analytics.monthlyTrends.map((m, i) => {
+                                                    const x = (i / (analytics.monthlyTrends.length - 1 || 1)) * 600;
+                                                    const y = 180 - (m.approved / maxMonthly) * 160;
+                                                    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                                                }).join(' ')}`}
+                                                fill="none"
+                                                stroke="#1e8449"
+                                                strokeWidth="2"
+                                            />
+                                        </>
+                                    )}
+                                </svg>
+                                <div className="chart-x-axis">
+                                    {analytics?.monthlyTrends?.map((m, i) => (
+                                        <span key={i}>{m.month}</span>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="stat-card">
-                            <div className="stat-icon officers">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12c5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4l1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
+                        {/* Donut Chart - Status Distribution */}
+                        <div className="chart-card">
+                            <h3>Status Distribution</h3>
+                            <div className="donut-wrapper">
+                                <svg viewBox="0 0 100 100" className="donut-chart-lg">
+                                    {totalRequests > 0 ? (
+                                        <>
+                                            <circle
+                                                cx="50" cy="50" r="40"
+                                                fill="none"
+                                                stroke="#10b981"
+                                                strokeWidth="8"
+                                                strokeDasharray={`${approvedPercent * 2.51} 251`}
+                                                strokeDashoffset="0"
+                                                transform="rotate(-90 50 50)"
+                                            />
+                                            <circle
+                                                cx="50" cy="50" r="40"
+                                                fill="none"
+                                                stroke="#3b82f6"
+                                                strokeWidth="8"
+                                                strokeDasharray={`${pendingPercent * 2.51} 251`}
+                                                strokeDashoffset={`${-approvedPercent * 2.51}`}
+                                                transform="rotate(-90 50 50)"
+                                            />
+                                            <circle
+                                                cx="50" cy="50" r="40"
+                                                fill="none"
+                                                stroke="#ef4444"
+                                                strokeWidth="8"
+                                                strokeDasharray={`${rejectedPercent * 2.51} 251`}
+                                                strokeDashoffset={`${-(approvedPercent + pendingPercent) * 2.51}`}
+                                                transform="rotate(-90 50 50)"
+                                            />
+                                        </>
+                                    ) : (
+                                        <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" strokeWidth="8" />
+                                    )}
+                                    <text x="50" y="46" textAnchor="middle" className="donut-value">{totalRequests.toLocaleString()}</text>
+                                    <text x="50" y="58" textAnchor="middle" className="donut-label">TOTAL</text>
                                 </svg>
                             </div>
-                            <span className="stat-label">ACTIVE OFFICERS</span>
-                            <span className="stat-value">{stats.totalOfficers}</span>
-                        </div>
-
-                        <div className="stat-card highlight">
-                            <div className="stat-badge">Priority</div>
-                            <div className="stat-icon pending-highlight">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M19 3H14.82C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1s-1-.45-1-1s.45-1 1-1zm-2 14l-4-4l1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
-                                </svg>
+                            <div className="distribution-legend">
+                                <div className="legend-row">
+                                    <span className="legend-dot"><span className="dot" style={{ background: '#10b981' }}></span> Approved</span>
+                                    <span className="legend-value">{approvedPercent}%</span>
+                                </div>
+                                <div className="legend-row">
+                                    <span className="legend-dot"><span className="dot" style={{ background: '#3b82f6' }}></span> Pending</span>
+                                    <span className="legend-value">{pendingPercent}%</span>
+                                </div>
+                                <div className="legend-row">
+                                    <span className="legend-dot"><span className="dot" style={{ background: '#ef4444' }}></span> Rejected</span>
+                                    <span className="legend-value">{rejectedPercent}%</span>
+                                </div>
                             </div>
-                            <span className="stat-label">PENDING CLEARANCES</span>
-                            <span className="stat-value">{stats.pendingClearances.toLocaleString()}</span>
                         </div>
                     </div>
 
-                    {/* Reports Grid */}
-                    <div className="reports-grid">
-                        {/* Clearance Summary */}
-                        <div className="officers-section">
-                            <div className="section-header">
-                                <div>
-                                    <h2>Clearance Summary</h2>
-                                    <p className="section-subtitle">Overview of clearance requests status</p>
+                    {/* Processing Time Section */}
+                    <div className="chart-card full-width">
+                        <div className="chart-header-row">
+                            <div>
+                                <h3>Average Processing Time</h3>
+                                <p className="chart-subtitle">Average days to complete clearance per department</p>
+                            </div>
+                            <span className="target-badge">Target: &lt; 2 Days</span>
+                        </div>
+                        <div className="processing-grid">
+                            <div className="processing-item">
+                                <div className="processing-header">
+                                    <span className="processing-name">BURSARY OFFICE</span>
+                                    <span className="processing-days">1.2 DAYS</span>
+                                </div>
+                                <div className="processing-bar">
+                                    <div className="processing-fill success" style={{ width: '40%' }}></div>
                                 </div>
                             </div>
-                            <div className="report-stats">
-                                <div className="report-stat-item">
-                                    <div className="report-stat-icon approved">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                                        </svg>
-                                    </div>
-                                    <div className="report-stat-content">
-                                        <span className="report-stat-value">{stats.approvedClearances}</span>
-                                        <span className="report-stat-label">Approved</span>
-                                    </div>
+                            <div className="processing-item">
+                                <div className="processing-header">
+                                    <span className="processing-name">STUDENT AFFAIRS</span>
+                                    <span className="processing-days warning">3.1 DAYS</span>
                                 </div>
-                                <div className="report-stat-item">
-                                    <div className="report-stat-icon pending">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
-                                        </svg>
-                                    </div>
-                                    <div className="report-stat-content">
-                                        <span className="report-stat-value">{stats.pendingClearances}</span>
-                                        <span className="report-stat-label">Pending</span>
-                                    </div>
+                                <div className="processing-bar">
+                                    <div className="processing-fill warning" style={{ width: '100%' }}></div>
                                 </div>
-                                <div className="report-stat-item">
-                                    <div className="report-stat-icon rejected">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-                                        </svg>
-                                    </div>
-                                    <div className="report-stat-content">
-                                        <span className="report-stat-value">{stats.rejectedClearances}</span>
-                                        <span className="report-stat-label">Rejected</span>
-                                    </div>
+                            </div>
+                            <div className="processing-item">
+                                <div className="processing-header">
+                                    <span className="processing-name">MAIN LIBRARY</span>
+                                    <span className="processing-days">0.8 DAYS</span>
+                                </div>
+                                <div className="processing-bar">
+                                    <div className="processing-fill success" style={{ width: '27%' }}></div>
+                                </div>
+                            </div>
+                            <div className="processing-item">
+                                <div className="processing-header">
+                                    <span className="processing-name">ICT CENTER</span>
+                                    <span className="processing-days">0.5 DAYS</span>
+                                </div>
+                                <div className="processing-bar">
+                                    <div className="processing-fill success" style={{ width: '17%' }}></div>
+                                </div>
+                            </div>
+                            <div className="processing-item">
+                                <div className="processing-header">
+                                    <span className="processing-name">FACULTY OFFICE</span>
+                                    <span className="processing-days">2.5 DAYS</span>
+                                </div>
+                                <div className="processing-bar">
+                                    <div className="processing-fill warning" style={{ width: '83%' }}></div>
+                                </div>
+                            </div>
+                            <div className="processing-item">
+                                <div className="processing-header">
+                                    <span className="processing-name">SECURITY UNIT</span>
+                                    <span className="processing-days">1.5 DAYS</span>
+                                </div>
+                                <div className="processing-bar">
+                                    <div className="processing-fill success" style={{ width: '50%' }}></div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Quick Actions */}
-                        <div className="officers-section">
-                            <div className="section-header">
-                                <div>
-                                    <h2>Quick Reports</h2>
-                                    <p className="section-subtitle">Generate common reports</p>
-                                </div>
+                    {/* Top Performing Officers */}
+                    <div className="chart-card full-width">
+                        <div className="chart-header-row">
+                            <div>
+                                <h3>Top Performing Officers</h3>
+                                <p className="chart-subtitle">Staff ranked by clearance processing speed and accuracy</p>
                             </div>
-                            <div className="quick-actions-list">
-                                <button className="quick-action-btn" onClick={() => handleExport('clearance')}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                        <polyline points="14 2 14 8 20 8" />
-                                        <line x1="16" y1="13" x2="8" y2="13" />
-                                        <line x1="16" y1="17" x2="8" y2="17" />
-                                    </svg>
-                                    Student Clearance Report
-                                </button>
-                                <button className="quick-action-btn" onClick={() => handleExport('officers')}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                        <circle cx="9" cy="7" r="4" />
-                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                                    </svg>
-                                    Officer Activity Report
-                                </button>
-                                <button className="quick-action-btn" onClick={() => handleExport('statistics')}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <line x1="18" y1="20" x2="18" y2="10" />
-                                        <line x1="12" y1="20" x2="12" y2="4" />
-                                        <line x1="6" y1="20" x2="6" y2="14" />
-                                    </svg>
-                                    Monthly Statistics
-                                </button>
-                            </div>
+                            <button className="btn btn-link">View All Rankings</button>
+                        </div>
+                        <div className="table-container">
+                            <table className="table officers-table">
+                                <thead>
+                                    <tr>
+                                        <th>RANK</th>
+                                        <th>OFFICER NAME</th>
+                                        <th>DEPARTMENT</th>
+                                        <th>AVG. TIME</th>
+                                        <th>CLEARANCES</th>
+                                        <th>PERFORMANCE</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span className="rank-badge rank-1">1</span></td>
+                                        <td>
+                                            <div className="officer-cell">
+                                                <div className="officer-avatar">DA</div>
+                                                <div>
+                                                    <span className="officer-name">Dr. Aminu Bello</span>
+                                                    <span className="officer-email">aminu.b@uni.edu.ng</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>Bursary Office</td>
+                                        <td className="time-good">0.4 Days</td>
+                                        <td>842</td>
+                                        <td><span className="performance-score">★ 98.5%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span className="rank-badge rank-2">2</span></td>
+                                        <td>
+                                            <div className="officer-cell">
+                                                <div className="officer-avatar">FO</div>
+                                                <div>
+                                                    <span className="officer-name">Mrs. Fatima Okonkwo</span>
+                                                    <span className="officer-email">fatima.o@uni.edu.ng</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>Main Library</td>
+                                        <td className="time-good">0.6 Days</td>
+                                        <td>756</td>
+                                        <td><span className="performance-score">★ 97.2%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span className="rank-badge rank-3">3</span></td>
+                                        <td>
+                                            <div className="officer-cell">
+                                                <div className="officer-avatar">JA</div>
+                                                <div>
+                                                    <span className="officer-name">Mr. John Adeyemi</span>
+                                                    <span className="officer-email">john.a@uni.edu.ng</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>ICT Center</td>
+                                        <td className="time-good">0.5 Days</td>
+                                        <td>689</td>
+                                        <td><span className="performance-score">★ 96.8%</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </main>
-
-            <style jsx>{`
-                .reports-grid {
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: var(--space-5);
-                }
-
-                .report-stats {
-                    display: flex;
-                    gap: var(--space-6);
-                    padding: var(--space-4) 0;
-                }
-
-                .report-stat-item {
-                    display: flex;
-                    align-items: center;
-                    gap: var(--space-3);
-                }
-
-                .report-stat-icon {
-                    width: 44px;
-                    height: 44px;
-                    border-radius: var(--radius-md);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-
-                .report-stat-icon.approved {
-                    background-color: #dcfce7;
-                    color: #16a34a;
-                }
-
-                .report-stat-icon.pending {
-                    background-color: #fef3c7;
-                    color: #d97706;
-                }
-
-                .report-stat-icon.rejected {
-                    background-color: #fee2e2;
-                    color: #dc2626;
-                }
-
-                .report-stat-content {
-                    display: flex;
-                    flex-direction: column;
-                }
-
-                .report-stat-value {
-                    font-size: var(--font-size-xl);
-                    font-weight: 700;
-                    color: var(--color-text);
-                }
-
-                .report-stat-label {
-                    font-size: var(--font-size-sm);
-                    color: var(--color-text-muted);
-                }
-
-                .quick-actions-list {
-                    display: flex;
-                    flex-direction: column;
-                    gap: var(--space-3);
-                }
-
-                .quick-action-btn {
-                    display: flex;
-                    align-items: center;
-                    gap: var(--space-3);
-                    width: 100%;
-                    padding: var(--space-3) var(--space-4);
-                    background-color: var(--color-background);
-                    border: 1px solid var(--color-border);
-                    border-radius: var(--radius-md);
-                    font-size: var(--font-size-sm);
-                    color: var(--color-text);
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                    text-align: left;
-                }
-
-                .quick-action-btn:hover {
-                    background-color: var(--color-primary);
-                    color: var(--color-white);
-                    border-color: var(--color-primary);
-                }
-
-                .filter-select {
-                    padding: var(--space-2) var(--space-4);
-                    padding-right: var(--space-6);
-                    border: 1px solid var(--color-border);
-                    border-radius: var(--radius-md);
-                    background-color: var(--color-white);
-                    font-size: var(--font-size-sm);
-                    font-weight: 500;
-                    color: var(--color-text);
-                    cursor: pointer;
-                    appearance: none;
-                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-                    background-repeat: no-repeat;
-                    background-position: right 12px center;
-                    transition: all 0.2s ease;
-                }
-
-                .filter-select:hover {
-                    border-color: var(--color-primary);
-                }
-
-                .filter-select:focus {
-                    outline: none;
-                    border-color: var(--color-primary);
-                    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
-                }
-
-                @media (max-width: 768px) {
-                    .reports-grid {
-                        grid-template-columns: 1fr;
-                    }
-
-                    .report-stats {
-                        flex-direction: column;
-                        gap: var(--space-4);
-                    }
-                }
-            `}</style>
         </div>
     );
 }

@@ -1,5 +1,5 @@
 // GET /api/admin/seed-data - Seed KWASU faculties, departments, and clearance types
-import { sql } from '@/lib/db';
+import { sql, initializeDatabase } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/utils';
 
 // KWASU Faculties and Departments
@@ -77,6 +77,9 @@ const clearanceTypes = [
 
 export async function GET() {
     try {
+        // Initialize database tables (creates any missing tables)
+        await initializeDatabase();
+
         let departmentsAdded = 0;
         let clearanceTypesAdded = 0;
 

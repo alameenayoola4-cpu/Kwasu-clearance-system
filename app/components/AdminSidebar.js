@@ -27,6 +27,21 @@ const icons = {
             <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
         </svg>
     ),
+    analytics: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" />
+        </svg>
+    ),
+    auditLogs: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+        </svg>
+    ),
+    announcements: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 9h-2V5h2v6zm0 4h-2v-2h2v2z" />
+        </svg>
+    ),
     reports: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
@@ -50,6 +65,9 @@ const navItems = [
     { href: '/admin/officers', label: 'Officers', icon: icons.officers },
     { href: '/admin/students', label: 'Students', icon: icons.students },
     { href: '/admin/clearance-types', label: 'Clearance Types', icon: icons.clearanceTypes },
+    { href: '/admin/analytics', label: 'Analytics', icon: icons.analytics },
+    { href: '/admin/audit-logs', label: 'Audit Logs', icon: icons.auditLogs },
+    { href: '/admin/announcements', label: 'Announcements', icon: icons.announcements },
     { href: '/admin/reports', label: 'Reports', icon: icons.reports },
     { href: '/admin/settings', label: 'Settings', icon: icons.settings },
 ];

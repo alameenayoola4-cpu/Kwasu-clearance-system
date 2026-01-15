@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import CustomDropdown from '../../components/CustomDropdown';
 import { useAuthSync } from '../../hooks/useAuthSync';
 import '../../student/student.css';
 import '../officer.css';
@@ -180,16 +181,24 @@ export default function OfficerRequestsPage() {
                             <button className={`filter-tab ${statusFilter === 'rejected' ? 'active' : ''}`} onClick={() => setStatusFilter('rejected')}>Rejected</button>
                         </div>
                         <div className="filter-controls">
-                            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="filter-select">
-                                <option value="all">All Types</option>
-                                <option value="siwes">SIWES</option>
-                                <option value="final">Final Year</option>
-                                <option value="faculty">Faculty</option>
-                            </select>
-                            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="filter-select">
-                                <option value="newest">Newest First</option>
-                                <option value="oldest">Oldest First</option>
-                            </select>
+                            <CustomDropdown
+                                value={typeFilter}
+                                onChange={setTypeFilter}
+                                options={[
+                                    { value: 'all', label: 'All Types' },
+                                    { value: 'siwes', label: 'SIWES' },
+                                    { value: 'final', label: 'Final Year' },
+                                    { value: 'faculty', label: 'Faculty' },
+                                ]}
+                            />
+                            <CustomDropdown
+                                value={sortBy}
+                                onChange={setSortBy}
+                                options={[
+                                    { value: 'newest', label: 'Newest First' },
+                                    { value: 'oldest', label: 'Oldest First' },
+                                ]}
+                            />
                         </div>
                     </div>
 
