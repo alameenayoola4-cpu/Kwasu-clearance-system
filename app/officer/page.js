@@ -124,7 +124,7 @@ export default function OfficerDashboard() {
                     <Link href="/officer" className="sidebar-logo">
                         <Image src="/logo.png" alt="KWASU" width={40} height={40} />
                         <div className="sidebar-logo-text">
-                            <span className="logo-title">UniClearance</span>
+                            <span className="logo-title">KWASU Clearance</span>
                             <span className="logo-subtitle">KWASU ED SYSTEM</span>
                         </div>
                     </Link>

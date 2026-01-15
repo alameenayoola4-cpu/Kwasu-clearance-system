@@ -68,7 +68,7 @@ export default function CertificatePage({ params }) {
             <header className="certificate-header no-print">
                 <Link href="/student" className="header-logo">
                     <Image src="/logo.png" alt="KWASU" width={32} height={32} />
-                    <span>UniClearance</span>
+                    <span>KWASU Clearance</span>
                 </Link>
                 <div className="header-actions">
                     <button onClick={handlePrint} className="btn btn-primary">

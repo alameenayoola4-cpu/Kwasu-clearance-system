@@ -192,7 +192,7 @@ export default function ApplyPage({ params }) {
                 <div className="apply-header-left">
                     <Link href="/student" className="apply-logo">
                         <Image src="/logo.png" alt="KWASU" width={32} height={32} />
-                        <span>UniClearance</span>
+                        <span>KWASU Clearance</span>
                     </Link>
                 </div>
                 <nav className="apply-nav">

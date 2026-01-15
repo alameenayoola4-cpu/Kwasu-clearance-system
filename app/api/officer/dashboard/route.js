@@ -1,11 +1,11 @@
-// GET /api/officer/dashboard - Get officer dashboard data
+// GET /api/officer/dashboard - Get officer dashboard data (OPTIMIZED)
 import { getCurrentUser } from '@/lib/auth';
 import { requestQueries, userQueries, clearanceTypeQueries } from '@/lib/db';
 import { errorResponse, successResponse } from '@/lib/utils';
 
 export async function GET() {
     try {
-        // Get current user
+        // Get current user from token
         const tokenUser = await getCurrentUser();
 
         if (!tokenUser) {
@@ -16,61 +16,50 @@ export async function GET() {
             return errorResponse('Access denied', 403);
         }
 
-        // Get fresh user data (async)
+        // Get fresh user data
         const user = await userQueries.findById(tokenUser.id);
 
         if (!user) {
             return errorResponse('User not found', 404);
         }
 
-        // Get the clearance type name if officer has one assigned
-        let assignedTypeName = null;
-        let assignedTypeFilter = null;
+        // Get clearance type info and all requests IN PARALLEL
+        const [clearanceType, allRequests] = await Promise.all([
+            user.assigned_clearance_type
+                ? clearanceTypeQueries.findById(user.assigned_clearance_type)
+                : null,
+            requestQueries.findAll() // Get all requests in ONE query
+        ]);
 
-        if (user.assigned_clearance_type) {
-            const clearanceType = await clearanceTypeQueries.findById(user.assigned_clearance_type);
-            if (clearanceType) {
-                assignedTypeName = clearanceType.display_name;
-                assignedTypeFilter = clearanceType.name; // 'siwes', 'final', 'faculty'
-            }
-        }
+        const assignedTypeName = clearanceType?.display_name || null;
+        const assignedTypeFilter = clearanceType?.name || null;
 
-        // Determine which requests this officer can see based on assigned_clearance_type
-        let pendingRequests = [];
-        let allRequests = [];
+        // Filter requests based on officer's assigned type (client-side filtering is faster than multiple DB queries)
+        let filteredRequests = allRequests;
 
-        if (!assignedTypeFilter) {
-            // No specific type assigned - show all requests
-            pendingRequests = await requestQueries.findPending();
-            const siwesRequests = await requestQueries.findByType('siwes');
-            const finalRequests = await requestQueries.findByType('final');
-            const facultyRequests = await requestQueries.findByType('faculty');
-            allRequests = [...siwesRequests, ...finalRequests, ...facultyRequests];
-        } else {
-            // Filter by assigned clearance type
-            pendingRequests = await requestQueries.findPendingByType(assignedTypeFilter);
-            allRequests = await requestQueries.findByType(assignedTypeFilter);
+        if (assignedTypeFilter) {
+            filteredRequests = allRequests.filter(r => r.type === assignedTypeFilter);
 
             // For faculty-based officers, also filter by assigned faculty
             if (assignedTypeFilter === 'faculty' && user.assigned_faculty) {
-                allRequests = allRequests.filter(r => r.faculty === user.assigned_faculty);
-                pendingRequests = pendingRequests.filter(r => r.faculty === user.assigned_faculty);
+                filteredRequests = filteredRequests.filter(r => r.faculty === user.assigned_faculty);
             }
         }
 
-        // Calculate statistics
+        // Calculate statistics from filtered data
+        const pendingRequests = filteredRequests.filter(r => r.status === 'pending');
         const pendingCount = pendingRequests.length;
-        const approvedToday = allRequests.filter(r => {
+
+        const today = new Date().toDateString();
+        const approvedToday = filteredRequests.filter(r => {
             if (r.status !== 'approved' || !r.reviewed_at) return false;
-            const today = new Date().toDateString();
-            const reviewDate = new Date(r.reviewed_at).toDateString();
-            return today === reviewDate;
+            return new Date(r.reviewed_at).toDateString() === today;
         }).length;
 
-        const totalStudents = allRequests.length;
+        const totalStudents = filteredRequests.length;
 
         // Format requests for frontend
-        const formattedRequests = allRequests.map(req => ({
+        const formattedRequests = filteredRequests.map(req => ({
             id: req.id,
             request_id: req.request_id,
             student_name: req.student_name,

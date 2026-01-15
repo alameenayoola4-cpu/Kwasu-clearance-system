@@ -236,6 +236,7 @@
     padding: var(--space-4) var(--space-5);
     border-bottom: 1px solid var(--color-border);
     background-color: #fafbfc;
+    flex-wrap: wrap;
 }
 
 .filter-tab {
@@ -247,16 +248,109 @@
     cursor: pointer;
     transition: all var(--transition-fast);
     color: var(--color-text);
+    font-weight: 500;
 }
 
 .filter-tab:hover {
     border-color: var(--color-primary);
+    background-color: #f0fdf4;
 }
 
 .filter-tab.active {
     background-color: var(--color-primary);
     color: var(--color-white);
     border-color: var(--color-primary);
+}
+
+/* Filters Row */
+.filters-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4);
+    background-color: #fafbfc;
+    border-bottom: 1px solid var(--color-border);
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.filter-controls {
+    display: flex;
+    gap: var(--space-3);
+}
+
+/* Custom Styled Select */
+.filter-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding: 0.625rem 2.5rem 0.625rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-white);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text);
+    cursor: pointer;
+    min-width: 140px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    transition: all var(--transition-fast);
+}
+
+.filter-select:hover {
+    border-color: var(--color-primary);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(26, 77, 46, 0.1);
+}
+
+/* Section Header */
+.section-header {
+    margin-bottom: var(--space-5);
+}
+
+.section-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: var(--space-1);
+}
+
+.section-header p {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    margin: 0;
+}
+
+/* Breadcrumb Navigation */
+.breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+}
+
+.breadcrumb-nav a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+}
+
+.breadcrumb-nav a:hover {
+    color: var(--color-primary);
+}
+
+.breadcrumb-nav span {
+    color: var(--color-text-muted);
+}
+
+.breadcrumb-nav .current {
+    color: var(--color-text);
+    font-weight: 500;
 }
 
 /* Student Cell */
