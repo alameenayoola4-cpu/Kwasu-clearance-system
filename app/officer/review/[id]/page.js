@@ -17,6 +17,7 @@ export default function ReviewPage({ params }) {
     const [data, setData] = useState(null);
     const [error, setError] = useState('');
     const [remarks, setRemarks] = useState('');
+    const [officerNotes, setOfficerNotes] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
 
@@ -46,6 +47,8 @@ export default function ReviewPage({ params }) {
         try {
             const response = await fetch(`/api/officer/requests/${id}?action=approve`, {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notes: officerNotes }),
             });
 
             const result = await response.json();
@@ -325,9 +328,27 @@ export default function ReviewPage({ params }) {
                     </h3>
 
                     <div className="remarks-section">
-                        <label>OFFICER REMARKS</label>
+                        <label>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px', verticalAlign: 'middle' }}>
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                            INTERNAL NOTES (Optional)
+                        </label>
                         <textarea
-                            placeholder="Add notes for the student or internal audit. Required if rejecting."
+                            placeholder="Add internal notes for record keeping..."
+                            value={officerNotes}
+                            onChange={(e) => setOfficerNotes(e.target.value)}
+                            disabled={data?.request?.status !== 'pending'}
+                            rows={2}
+                        ></textarea>
+                        <small className="notes-hint">These notes are saved with the decision for audit purposes.</small>
+                    </div>
+
+                    <div className="remarks-section">
+                        <label>REJECTION REASON</label>
+                        <textarea
+                            placeholder="Required if rejecting. Explain why the request cannot be approved..."
                             value={remarks}
                             onChange={(e) => setRemarks(e.target.value)}
                             disabled={data?.request?.status !== 'pending'}

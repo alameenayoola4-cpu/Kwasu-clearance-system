@@ -7,9 +7,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import MobileWarning from '../components/MobileWarning';
 import CustomDropdown from '../components/CustomDropdown';
+import CustomDatePicker from '../components/CustomDatePicker';
 import InactivityWarning from '../components/InactivityWarning';
 import { useAuthSync } from '../hooks/useAuthSync';
 import { useInactivityTimeout } from '../hooks/useInactivityTimeout';
+import { ALL_DEPARTMENTS } from '../../lib/kwasuData';
 import '../student/student.css';
 import './officer.css';
 
@@ -20,8 +22,18 @@ export default function OfficerDashboard() {
     const [error, setError] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [typeFilter, setTypeFilter] = useState('all');
+    const [departmentFilter, setDepartmentFilter] = useState('all');
     const [sortBy, setSortBy] = useState('newest');
     const [searchQuery, setSearchQuery] = useState('');
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
+    const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+    // Bulk action states
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [bulkProcessing, setBulkProcessing] = useState(false);
+    const [showBulkRejectModal, setShowBulkRejectModal] = useState(false);
+    const [bulkRejectReason, setBulkRejectReason] = useState('');
 
     // Listen for auth changes from other tabs
     useAuthSync('officer');
@@ -82,11 +94,30 @@ export default function OfficerDashboard() {
         return <span className={`type-badge ${config.class}`}>{config.label}</span>;
     };
 
+    // Get unique departments from requests or use official KWASU departments list
+    const requestDepartments = [...new Set((data?.requests || []).map(r => r.department).filter(Boolean))];
+    const departments = requestDepartments.length > 0 ? requestDepartments : ALL_DEPARTMENTS;
+
     // Filter and sort requests
     const filteredRequests = (data?.requests || [])
         .filter(req => {
             if (statusFilter !== 'all' && req.status !== statusFilter) return false;
             if (typeFilter !== 'all' && req.type !== typeFilter) return false;
+            if (departmentFilter !== 'all' && req.department !== departmentFilter) return false;
+
+            // Date range filter
+            if (fromDate) {
+                const reqDate = new Date(req.created_at);
+                const from = new Date(fromDate);
+                if (reqDate < from) return false;
+            }
+            if (toDate) {
+                const reqDate = new Date(req.created_at);
+                const to = new Date(toDate);
+                to.setHours(23, 59, 59, 999); // Include the entire end date
+                if (reqDate > to) return false;
+            }
+
             if (searchQuery) {
                 const query = searchQuery.toLowerCase();
                 return req.student_name?.toLowerCase().includes(query) ||
@@ -99,6 +130,89 @@ export default function OfficerDashboard() {
             if (sortBy === 'oldest') return new Date(a.created_at) - new Date(b.created_at);
             return 0;
         });
+
+    // Count active filters
+    const activeFilterCount = [
+        statusFilter !== 'all',
+        typeFilter !== 'all',
+        departmentFilter !== 'all',
+        fromDate,
+        toDate
+    ].filter(Boolean).length;
+
+    // Get pending requests for bulk selection
+    const pendingRequests = filteredRequests.filter(r => r.status === 'pending');
+    const allPendingSelected = pendingRequests.length > 0 && pendingRequests.every(r => selectedIds.includes(r.id));
+    const somePendingSelected = selectedIds.length > 0;
+
+    // Bulk selection handlers
+    const toggleSelectAll = () => {
+        if (allPendingSelected) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(pendingRequests.map(r => r.id));
+        }
+    };
+
+    const toggleSelectOne = (id) => {
+        setSelectedIds(prev =>
+            prev.includes(id)
+                ? prev.filter(x => x !== id)
+                : [...prev, id]
+        );
+    };
+
+    // Bulk approve handler
+    const handleBulkApprove = async () => {
+        if (selectedIds.length === 0) return;
+
+        setBulkProcessing(true);
+        try {
+            const response = await fetch('/api/officer/bulk-action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: selectedIds, action: 'approve' }),
+            });
+
+            if (!response.ok) throw new Error('Bulk approve failed');
+
+            setSelectedIds([]);
+            fetchDashboard(); // Refresh data
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setBulkProcessing(false);
+        }
+    };
+
+    // Bulk reject handler
+    const handleBulkReject = async () => {
+        if (selectedIds.length === 0 || !bulkRejectReason.trim()) return;
+
+        setBulkProcessing(true);
+        try {
+            const response = await fetch('/api/officer/bulk-action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ids: selectedIds,
+                    action: 'reject',
+                    reason: bulkRejectReason
+                }),
+            });
+
+            if (!response.ok) throw new Error('Bulk reject failed');
+
+            setSelectedIds([]);
+            setBulkRejectReason('');
+            setShowBulkRejectModal(false);
+            fetchDashboard(); // Refresh data
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setBulkProcessing(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -281,7 +395,7 @@ export default function OfficerDashboard() {
                         <div className="requests-header">
                             <div className="requests-title">
                                 <h2>Student Clearance Requests</h2>
-                                <p>Review and approve pending documentation.</p>
+                                <p>Review and approve pending documentation. {filteredRequests.length} of {data?.requests?.length || 0} shown</p>
                             </div>
                             <div className="requests-controls">
                                 <CustomDropdown
@@ -296,6 +410,22 @@ export default function OfficerDashboard() {
                                     icon={
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                                        </svg>
+                                    }
+                                />
+                                <CustomDropdown
+                                    value={typeFilter}
+                                    onChange={setTypeFilter}
+                                    options={[
+                                        { value: 'all', label: 'All Types' },
+                                        { value: 'siwes', label: 'SIWES' },
+                                        { value: 'final', label: 'Final Clearance' },
+                                        { value: 'faculty', label: 'Faculty Clearance' },
+                                    ]}
+                                    icon={
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                            <polyline points="14 2 14 8 20 8" />
                                         </svg>
                                     }
                                 />
@@ -315,143 +445,307 @@ export default function OfficerDashboard() {
                                         </svg>
                                     }
                                 />
+                                <button
+                                    className={`btn btn-outline advanced-filter-btn ${showAdvancedFilters ? 'active' : ''}`}
+                                    onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <line x1="4" y1="21" x2="4" y2="14" />
+                                        <line x1="4" y1="10" x2="4" y2="3" />
+                                        <line x1="12" y1="21" x2="12" y2="12" />
+                                        <line x1="12" y1="8" x2="12" y2="3" />
+                                        <line x1="20" y1="21" x2="20" y2="16" />
+                                        <line x1="20" y1="12" x2="20" y2="3" />
+                                        <line x1="1" y1="14" x2="7" y2="14" />
+                                        <line x1="9" y1="8" x2="15" y2="8" />
+                                        <line x1="17" y1="16" x2="23" y2="16" />
+                                    </svg>
+                                    More Filters
+                                    {activeFilterCount > 0 && <span className="filter-badge">{activeFilterCount}</span>}
+                                </button>
                             </div>
                         </div>
 
-                        {/* Type Filter Tabs */}
-                        <div className="filter-tabs-row">
-                            <button
-                                className={`filter-tab ${typeFilter === 'all' ? 'active' : ''}`}
-                                onClick={() => setTypeFilter('all')}
-                            >
-                                All Requests
-                            </button>
-                            <button
-                                className={`filter-tab ${typeFilter === 'siwes' ? 'active' : ''}`}
-                                onClick={() => setTypeFilter('siwes')}
-                            >
-                                SIWES Clearance
-                            </button>
-                            <button
-                                className={`filter-tab ${typeFilter === 'final' ? 'active' : ''}`}
-                                onClick={() => setTypeFilter('final')}
-                            >
-                                Final Year Clearance
-                            </button>
-                            <button
-                                className={`filter-tab ${typeFilter === 'faculty' ? 'active' : ''}`}
-                                onClick={() => setTypeFilter('faculty')}
-                            >
-                                Faculty Clearance
-                            </button>
-                        </div>
-
-                        {/* Requests Table */}
-                        <div className="table-container">
-                            <table className="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>STUDENT NAME</th>
-                                        <th>MATRIC NO</th>
-                                        <th>TYPE</th>
-                                        <th>DATE SUBMITTED</th>
-                                        <th>STATUS</th>
-                                        <th>ACTION</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredRequests.map(req => (
-                                        <tr key={req.id}>
-                                            <td>
-                                                <div className="student-cell">
-                                                    <div className="student-avatar">
-                                                        {req.student_name?.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                                                    </div>
-                                                    <span className="student-name">{req.student_name}</span>
-                                                </div>
-                                            </td>
-                                            <td className="matric-cell">{req.matric_no}</td>
-                                            <td>{getTypeBadge(req.type)}</td>
-                                            <td>{new Date(req.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
-                                            <td>{getStatusBadge(req.status)}</td>
-                                            <td>
-                                                {req.status === 'pending' ? (
-                                                    <Link href={`/officer/review/${req.id}`} className="btn btn-primary btn-sm">
-                                                        Review
-                                                    </Link>
-                                                ) : (
-                                                    <Link href={`/officer/review/${req.id}`} className="btn btn-outline btn-sm">
-                                                        View
-                                                    </Link>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {filteredRequests.length === 0 && (
-                                        <tr>
-                                            <td colSpan="6" className="empty-state">
-                                                <div className="empty-message">
-                                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                                        <polyline points="14 2 14 8 20 8" />
-                                                    </svg>
-                                                    <p>No requests found</p>
-                                                    <span>Requests matching your filters will appear here.</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Table Footer with Pagination */}
-                        <div className="table-footer">
-                            <span className="showing-text">
-                                Showing {filteredRequests.length} of {data?.requests?.length || 0} pending requests
-                            </span>
-                            <div className="pagination">
-                                <button className="page-btn" disabled>&lt;</button>
-                                <button className="page-btn active">1</button>
-                                <button className="page-btn" disabled>&gt;</button>
+                        {/* Advanced Filters Panel */}
+                        {showAdvancedFilters && (
+                            <div className="advanced-filters-panel">
+                                <div className="filter-group">
+                                    <label>Department</label>
+                                    <CustomDropdown
+                                        value={departmentFilter}
+                                        onChange={setDepartmentFilter}
+                                        options={[
+                                            { value: 'all', label: 'All Departments' },
+                                            ...departments.map(d => ({ value: d, label: d }))
+                                        ]}
+                                    />
+                                </div>
+                                <div className="filter-group">
+                                    <label>From Date</label>
+                                    <CustomDatePicker
+                                        value={fromDate}
+                                        onChange={setFromDate}
+                                        placeholder="Start date"
+                                    />
+                                </div>
+                                <div className="filter-group">
+                                    <label>To Date</label>
+                                    <CustomDatePicker
+                                        value={toDate}
+                                        onChange={setToDate}
+                                        placeholder="End date"
+                                    />
+                                </div>
+                                <button
+                                    className="btn btn-ghost clear-filters-btn"
+                                    onClick={() => {
+                                        setStatusFilter('all');
+                                        setTypeFilter('all');
+                                        setDepartmentFilter('all');
+                                        setFromDate('');
+                                        setToDate('');
+                                    }}
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                    Clear All
+                                </button>
                             </div>
-                        </div>
+                        )}
                     </div>
 
-                    {/* Info Cards Row */}
-                    <div className="info-grid">
-                        <div className="info-card notice-card">
-                            <div className="info-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <line x1="12" y1="16" x2="12" y2="12" />
-                                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                    {/* Type Filter Tabs */}
+                    <div className="filter-tabs-row">
+                        <button
+                            className={`filter-tab ${typeFilter === 'all' ? 'active' : ''}`}
+                            onClick={() => setTypeFilter('all')}
+                        >
+                            All Requests
+                        </button>
+                        <button
+                            className={`filter-tab ${typeFilter === 'siwes' ? 'active' : ''}`}
+                            onClick={() => setTypeFilter('siwes')}
+                        >
+                            SIWES Clearance
+                        </button>
+                        <button
+                            className={`filter-tab ${typeFilter === 'final' ? 'active' : ''}`}
+                            onClick={() => setTypeFilter('final')}
+                        >
+                            Final Year Clearance
+                        </button>
+                        <button
+                            className={`filter-tab ${typeFilter === 'faculty' ? 'active' : ''}`}
+                            onClick={() => setTypeFilter('faculty')}
+                        >
+                            Faculty Clearance
+                        </button>
+                    </div>
+
+                    {/* Bulk Action Bar */}
+                    {somePendingSelected && (
+                        <div className="bulk-action-bar">
+                            <div className="bulk-action-info">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polyline points="9 11 12 14 22 4" />
+                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
                                 </svg>
+                                <span>{selectedIds.length} request{selectedIds.length !== 1 ? 's' : ''} selected</span>
                             </div>
-                            <div className="info-content">
-                                <h4>Academic Year 2025/2026 Clearance Cycle</h4>
-                                <p>The deadline for SIWES documentation submission for the current batch is Friday, November 15th. Please prioritize SIWES reviews to ensure students meet the industry deadline.</p>
+                            <div className="bulk-action-buttons">
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handleBulkApprove}
+                                    disabled={bulkProcessing}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                    {bulkProcessing ? 'Processing...' : 'Approve All'}
+                                </button>
+                                <button
+                                    className="btn btn-danger btn-outline"
+                                    onClick={() => setShowBulkRejectModal(true)}
+                                    disabled={bulkProcessing}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                    Reject All
+                                </button>
+                                <button
+                                    className="btn btn-ghost"
+                                    onClick={() => setSelectedIds([])}
+                                >
+                                    Clear Selection
+                                </button>
                             </div>
                         </div>
-                        <div className="info-card office-hours-card">
-                            <div className="office-hours-header">
-                                <h4>OFFICE HOURS</h4>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                                </svg>
-                            </div>
-                            <div className="hours-row">
-                                <span>Mon-Fri</span>
-                                <span className="hours-value">08:00 - 16:00</span>
-                            </div>
-                            <div className="hours-row">
-                                <span>Response Goal</span>
-                                <span className="hours-value">&lt; 48 Hours</span>
-                            </div>
+                    )}
+
+                    {/* Requests Table */}
+                    <div className="table-container">
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th className="checkbox-col">
+                                        <input
+                                            type="checkbox"
+                                            checked={allPendingSelected}
+                                            onChange={toggleSelectAll}
+                                            disabled={pendingRequests.length === 0}
+                                            title="Select all pending"
+                                        />
+                                    </th>
+                                    <th>STUDENT NAME</th>
+                                    <th>MATRIC NO</th>
+                                    <th>TYPE</th>
+                                    <th>DATE SUBMITTED</th>
+                                    <th>STATUS</th>
+                                    <th>ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredRequests.map(req => (
+                                    <tr key={req.id} className={selectedIds.includes(req.id) ? 'selected' : ''}>
+                                        <td className="checkbox-col">
+                                            {req.status === 'pending' ? (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.includes(req.id)}
+                                                    onChange={() => toggleSelectOne(req.id)}
+                                                />
+                                            ) : (
+                                                <span className="checkbox-placeholder"></span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <div className="student-cell">
+                                                <div className="student-avatar">
+                                                    {req.student_name?.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                                                </div>
+                                                <span className="student-name">{req.student_name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="matric-cell">{req.matric_no}</td>
+                                        <td>{getTypeBadge(req.type)}</td>
+                                        <td>{new Date(req.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                                        <td>{getStatusBadge(req.status)}</td>
+                                        <td>
+                                            {req.status === 'pending' ? (
+                                                <Link href={`/officer/review/${req.id}`} className="btn btn-primary btn-sm">
+                                                    Review
+                                                </Link>
+                                            ) : (
+                                                <Link href={`/officer/review/${req.id}`} className="btn btn-outline btn-sm">
+                                                    View
+                                                </Link>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {filteredRequests.length === 0 && (
+                                    <tr>
+                                        <td colSpan="6" className="empty-state">
+                                            <div className="empty-message">
+                                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                                    <polyline points="14 2 14 8 20 8" />
+                                                </svg>
+                                                <p>No requests found</p>
+                                                <span>Requests matching your filters will appear here.</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Table Footer with Pagination */}
+                    <div className="table-footer">
+                        <span className="showing-text">
+                            Showing {filteredRequests.length} of {data?.requests?.length || 0} pending requests
+                        </span>
+                        <div className="pagination">
+                            <button className="page-btn" disabled>&lt;</button>
+                            <button className="page-btn active">1</button>
+                            <button className="page-btn" disabled>&gt;</button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Info Cards Row */}
+                <div className="info-grid">
+                    <div className="info-card notice-card">
+                        <div className="info-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="16" x2="12" y2="12" />
+                                <line x1="12" y1="8" x2="12.01" y2="8" />
+                            </svg>
+                        </div>
+                        <div className="info-content">
+                            <h4>Academic Year 2025/2026 Clearance Cycle</h4>
+                            <p>The deadline for SIWES documentation submission for the current batch is Friday, November 15th. Please prioritize SIWES reviews to ensure students meet the industry deadline.</p>
+                        </div>
+                    </div>
+                    <div className="info-card office-hours-card">
+                        <div className="office-hours-header">
+                            <h4>OFFICE HOURS</h4>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        </div>
+                        <div className="hours-row">
+                            <span>Mon-Fri</span>
+                            <span className="hours-value">08:00 - 16:00</span>
+                        </div>
+                        <div className="hours-row">
+                            <span>Response Goal</span>
+                            <span className="hours-value">&lt; 48 Hours</span>
                         </div>
                     </div>
                 </div>
             </main>
+
+            {/* Bulk Reject Modal */}
+            {showBulkRejectModal && (
+                <div className="modal-overlay" onClick={() => setShowBulkRejectModal(false)}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Reject {selectedIds.length} Request{selectedIds.length !== 1 ? 's' : ''}</h3>
+                            <button className="modal-close" onClick={() => setShowBulkRejectModal(false)}>×</button>
+                        </div>
+                        <div className="modal-body">
+                            <p>Please provide a reason for rejecting these requests:</p>
+                            <textarea
+                                className="form-textarea"
+                                value={bulkRejectReason}
+                                onChange={(e) => setBulkRejectReason(e.target.value)}
+                                placeholder="e.g., Missing required documentation..."
+                                rows={4}
+                            ></textarea>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-ghost" onClick={() => setShowBulkRejectModal(false)}>
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-danger"
+                                onClick={handleBulkReject}
+                                disabled={bulkProcessing || !bulkRejectReason.trim()}
+                            >
+                                {bulkProcessing ? 'Rejecting...' : 'Confirm Rejection'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
+

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AdminSidebar from '../../components/AdminSidebar';
+import { KWASU_FACULTIES } from '../../../lib/kwasuData';
 import '../../student/student.css';
 import '../admin.css';
 
@@ -408,14 +409,9 @@ export default function OfficersPage() {
                                         onChange={(e) => setFormData({ ...formData, assigned_faculty: e.target.value })}
                                     >
                                         <option value="">All Faculties</option>
-                                        <option value="Engineering">Engineering</option>
-                                        <option value="Sciences">Sciences</option>
-                                        <option value="Agriculture">Agriculture</option>
-                                        <option value="Arts">Arts</option>
-                                        <option value="Education">Education</option>
-                                        <option value="Social Sciences">Social Sciences</option>
-                                        <option value="Law">Law</option>
-                                        <option value="Information Technology">Information Technology</option>
+                                        {KWASU_FACULTIES.map((faculty) => (
+                                            <option key={faculty.id} value={faculty.shortName}>{faculty.shortName}</option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
@@ -507,14 +503,9 @@ export default function OfficersPage() {
                                         onChange={(e) => setEditFormData({ ...editFormData, assigned_faculty: e.target.value })}
                                     >
                                         <option value="">All Faculties</option>
-                                        <option value="Engineering">Engineering</option>
-                                        <option value="Sciences">Sciences</option>
-                                        <option value="Agriculture">Agriculture</option>
-                                        <option value="Arts">Arts</option>
-                                        <option value="Education">Education</option>
-                                        <option value="Social Sciences">Social Sciences</option>
-                                        <option value="Law">Law</option>
-                                        <option value="Information Technology">Information Technology</option>
+                                        {KWASU_FACULTIES.map((faculty) => (
+                                            <option key={faculty.id} value={faculty.shortName}>{faculty.shortName}</option>
+                                        ))}
                                     </select>
                                 </div>
 

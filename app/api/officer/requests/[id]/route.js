@@ -107,8 +107,17 @@ export async function POST(request, { params }) {
         }
 
         if (action === 'approve') {
-            // Approve the request (async)
-            await requestQueries.approve(tokenUser.id, requestId);
+            // Get optional notes from body
+            let notes = '';
+            try {
+                const body = await request.json();
+                notes = body.notes || '';
+            } catch {
+                // No body provided, that's ok
+            }
+
+            // Approve the request with notes (async)
+            await requestQueries.approve(tokenUser.id, requestId, notes);
 
             return successResponse('Request approved successfully');
 
