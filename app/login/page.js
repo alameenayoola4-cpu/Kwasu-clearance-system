@@ -2,13 +2,17 @@
 
 // Login Page with Role Selector
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRecaptcha } from '../hooks/useRecaptcha';
 import './auth.css';
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const { executeRecaptcha, isLoading: recaptchaLoading } = useRecaptcha();
+
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -17,6 +21,9 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
+    // Check if redirected due to inactivity
+    const reason = searchParams.get('reason');
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -35,10 +42,16 @@ export default function LoginPage() {
         setError('');
 
         try {
+            // Get reCAPTCHA token
+            const recaptchaToken = await executeRecaptcha('login');
+
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({
+                    ...formData,
+                    recaptchaToken,
+                }),
             });
 
             const data = await response.json();

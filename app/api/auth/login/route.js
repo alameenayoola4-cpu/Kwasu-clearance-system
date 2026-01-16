@@ -3,14 +3,23 @@ import { userQueries } from '@/lib/db';
 import { verifyPassword, generateToken, setAuthCookie } from '@/lib/auth';
 import { loginSchema, validateBody } from '@/lib/validations';
 import { errorResponse, successResponse } from '@/lib/utils';
+import { verifyRecaptcha } from '@/lib/recaptcha';
 
 export async function POST(request) {
     try {
         // Parse request body
         const body = await request.json();
 
+        // Verify reCAPTCHA token first (bot protection)
+        const { recaptchaToken, ...loginData } = body;
+        const recaptchaResult = await verifyRecaptcha(recaptchaToken, 'login');
+
+        if (!recaptchaResult.success && !recaptchaResult.skipped) {
+            return errorResponse('Security verification failed. Please try again.', 403);
+        }
+
         // Validate input
-        const validation = validateBody(body, loginSchema);
+        const validation = validateBody(loginData, loginSchema);
         if (!validation.success) {
             return errorResponse(validation.error);
         }
@@ -65,3 +74,4 @@ export async function POST(request) {
         return errorResponse('An error occurred during login', 500);
     }
 }
+

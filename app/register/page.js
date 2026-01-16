@@ -5,10 +5,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRecaptcha } from '../hooks/useRecaptcha';
 import '../login/auth.css';
 
 export default function RegisterPage() {
     const router = useRouter();
+    const { executeRecaptcha } = useRecaptcha();
     const [faculties, setFaculties] = useState([]);
     const [loadingFaculties, setLoadingFaculties] = useState(true);
     const [formData, setFormData] = useState({
@@ -80,6 +82,9 @@ export default function RegisterPage() {
         }
 
         try {
+            // Get reCAPTCHA token
+            const recaptchaToken = await executeRecaptcha('register');
+
             const response = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -91,6 +96,7 @@ export default function RegisterPage() {
                     department: formData.department,
                     level: parseInt(formData.level) || 100,
                     password: formData.password,
+                    recaptchaToken,
                 }),
             });
 

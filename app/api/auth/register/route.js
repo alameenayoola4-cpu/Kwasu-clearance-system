@@ -3,16 +3,25 @@ import { userQueries } from '@/lib/db';
 import { hashPassword, generateToken, setAuthCookie } from '@/lib/auth';
 import { studentRegistrationSchema, validateBody } from '@/lib/validations';
 import { errorResponse, successResponse } from '@/lib/utils';
+import { verifyRecaptcha } from '@/lib/recaptcha';
 
 export async function POST(request) {
     try {
         // Parse request body
         const body = await request.json();
 
+        // Verify reCAPTCHA token first (bot protection)
+        const { recaptchaToken, ...registrationData } = body;
+        const recaptchaResult = await verifyRecaptcha(recaptchaToken, 'register');
+
+        if (!recaptchaResult.success && !recaptchaResult.skipped) {
+            return errorResponse('Security verification failed. Please try again.', 403);
+        }
+
         // Validate input
-        const validation = validateBody(body, studentRegistrationSchema);
+        const validation = validateBody(registrationData, studentRegistrationSchema);
         if (!validation.success) {
-            console.log('Validation error:', validation.error, 'Body:', JSON.stringify(body, null, 2));
+            console.log('Validation error:', validation.error, 'Body:', JSON.stringify(registrationData, null, 2));
             return errorResponse(validation.error);
         }
 
@@ -74,3 +83,4 @@ export async function POST(request) {
         return errorResponse('An error occurred during registration', 500);
     }
 }
+
