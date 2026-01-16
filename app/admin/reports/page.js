@@ -264,60 +264,33 @@ export default function ReportsPage() {
                             <span className="target-badge">Target: &lt; 2 Days</span>
                         </div>
                         <div className="processing-grid">
-                            <div className="processing-item">
-                                <div className="processing-header">
-                                    <span className="processing-name">BURSARY OFFICE</span>
-                                    <span className="processing-days">1.2 DAYS</span>
+                            {analytics?.processingTimes?.length > 0 ? (
+                                analytics.processingTimes.map((dept, index) => {
+                                    const days = parseFloat(dept.avgDays);
+                                    const isWarning = days > 2;
+                                    const barWidth = Math.min((days / 3) * 100, 100);
+                                    return (
+                                        <div key={index} className="processing-item">
+                                            <div className="processing-header">
+                                                <span className="processing-name">{dept.name}</span>
+                                                <span className={`processing-days ${isWarning ? 'warning' : ''}`}>
+                                                    {dept.avgDays} DAYS
+                                                </span>
+                                            </div>
+                                            <div className="processing-bar">
+                                                <div
+                                                    className={`processing-fill ${isWarning ? 'warning' : 'success'}`}
+                                                    style={{ width: `${barWidth}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="text-center text-muted" style={{ gridColumn: '1 / -1', padding: '20px' }}>
+                                    No processing data available yet
                                 </div>
-                                <div className="processing-bar">
-                                    <div className="processing-fill success" style={{ width: '40%' }}></div>
-                                </div>
-                            </div>
-                            <div className="processing-item">
-                                <div className="processing-header">
-                                    <span className="processing-name">STUDENT AFFAIRS</span>
-                                    <span className="processing-days warning">3.1 DAYS</span>
-                                </div>
-                                <div className="processing-bar">
-                                    <div className="processing-fill warning" style={{ width: '100%' }}></div>
-                                </div>
-                            </div>
-                            <div className="processing-item">
-                                <div className="processing-header">
-                                    <span className="processing-name">MAIN LIBRARY</span>
-                                    <span className="processing-days">0.8 DAYS</span>
-                                </div>
-                                <div className="processing-bar">
-                                    <div className="processing-fill success" style={{ width: '27%' }}></div>
-                                </div>
-                            </div>
-                            <div className="processing-item">
-                                <div className="processing-header">
-                                    <span className="processing-name">ICT CENTER</span>
-                                    <span className="processing-days">0.5 DAYS</span>
-                                </div>
-                                <div className="processing-bar">
-                                    <div className="processing-fill success" style={{ width: '17%' }}></div>
-                                </div>
-                            </div>
-                            <div className="processing-item">
-                                <div className="processing-header">
-                                    <span className="processing-name">FACULTY OFFICE</span>
-                                    <span className="processing-days">2.5 DAYS</span>
-                                </div>
-                                <div className="processing-bar">
-                                    <div className="processing-fill warning" style={{ width: '83%' }}></div>
-                                </div>
-                            </div>
-                            <div className="processing-item">
-                                <div className="processing-header">
-                                    <span className="processing-name">SECURITY UNIT</span>
-                                    <span className="processing-days">1.5 DAYS</span>
-                                </div>
-                                <div className="processing-bar">
-                                    <div className="processing-fill success" style={{ width: '50%' }}></div>
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </div>
 
@@ -343,54 +316,36 @@ export default function ReportsPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td><span className="rank-badge rank-1">1</span></td>
-                                        <td>
-                                            <div className="officer-cell">
-                                                <div className="officer-avatar">DA</div>
-                                                <div>
-                                                    <span className="officer-name">Dr. Aminu Bello</span>
-                                                    <span className="officer-email">aminu.b@uni.edu.ng</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>Bursary Office</td>
-                                        <td className="time-good">0.4 Days</td>
-                                        <td>842</td>
-                                        <td><span className="performance-score">★ 98.5%</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><span className="rank-badge rank-2">2</span></td>
-                                        <td>
-                                            <div className="officer-cell">
-                                                <div className="officer-avatar">FO</div>
-                                                <div>
-                                                    <span className="officer-name">Mrs. Fatima Okonkwo</span>
-                                                    <span className="officer-email">fatima.o@uni.edu.ng</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>Main Library</td>
-                                        <td className="time-good">0.6 Days</td>
-                                        <td>756</td>
-                                        <td><span className="performance-score">★ 97.2%</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><span className="rank-badge rank-3">3</span></td>
-                                        <td>
-                                            <div className="officer-cell">
-                                                <div className="officer-avatar">JA</div>
-                                                <div>
-                                                    <span className="officer-name">Mr. John Adeyemi</span>
-                                                    <span className="officer-email">john.a@uni.edu.ng</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>ICT Center</td>
-                                        <td className="time-good">0.5 Days</td>
-                                        <td>689</td>
-                                        <td><span className="performance-score">★ 96.8%</span></td>
-                                    </tr>
+                                    {analytics?.topOfficers?.length > 0 ? (
+                                        analytics.topOfficers.map((officer) => {
+                                            const initials = officer.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '??';
+                                            const rankClass = officer.rank <= 3 ? `rank-${officer.rank}` : '';
+                                            return (
+                                                <tr key={officer.id}>
+                                                    <td><span className={`rank-badge ${rankClass}`}>{officer.rank}</span></td>
+                                                    <td>
+                                                        <div className="officer-cell">
+                                                            <div className="officer-avatar">{initials}</div>
+                                                            <div>
+                                                                <span className="officer-name">{officer.name}</span>
+                                                                <span className="officer-email">{officer.email}</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>{officer.department}</td>
+                                                    <td className="time-good">{officer.avgDays} Days</td>
+                                                    <td>{officer.totalClearances}</td>
+                                                    <td><span className="performance-score">★ {officer.performance}%</span></td>
+                                                </tr>
+                                            );
+                                        })
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="6" className="text-center text-muted" style={{ padding: '40px' }}>
+                                                No officer performance data available yet
+                                            </td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -400,3 +355,4 @@ export default function ReportsPage() {
         </div>
     );
 }
+

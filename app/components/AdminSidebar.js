@@ -65,10 +65,9 @@ const navItems = [
     { href: '/admin/officers', label: 'Officers', icon: icons.officers },
     { href: '/admin/students', label: 'Students', icon: icons.students },
     { href: '/admin/clearance-types', label: 'Clearance Types', icon: icons.clearanceTypes },
-    { href: '/admin/analytics', label: 'Analytics', icon: icons.analytics },
+    { href: '/admin/reports', label: 'Reports', icon: icons.reports },
     { href: '/admin/audit-logs', label: 'Audit Logs', icon: icons.auditLogs },
     { href: '/admin/announcements', label: 'Announcements', icon: icons.announcements },
-    { href: '/admin/reports', label: 'Reports', icon: icons.reports },
     { href: '/admin/settings', label: 'Settings', icon: icons.settings },
 ];
 

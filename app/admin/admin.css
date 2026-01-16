@@ -1320,3 +1320,311 @@
     color: var(--color-text-muted);
     opacity: 0.7;
 }
+
+/* ===================================
+   MERGED ANALYTICS & REPORTS STYLES
+   =================================== */
+
+.analytics-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-5);
+    margin-bottom: var(--space-5);
+}
+
+.chart-wide {
+    min-height: 300px;
+}
+
+.chart-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-4);
+}
+
+.chart-header-row h3 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.chart-legend-inline {
+    display: flex;
+    gap: var(--space-4);
+}
+
+.legend-dot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+
+.legend-dot .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+/* Line Chart */
+.line-chart-container {
+    position: relative;
+    padding-bottom: var(--space-6);
+}
+
+.line-chart {
+    width: 100%;
+    height: 180px;
+}
+
+.grid-line {
+    stroke: #e5e7eb;
+    stroke-width: 1;
+}
+
+.chart-x-axis {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-2);
+    padding: 0 var(--space-2);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* Donut Chart Large */
+.donut-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-4) 0;
+}
+
+.donut-chart-lg {
+    width: 160px;
+    height: 160px;
+}
+
+.donut-value {
+    font-size: 22px;
+    font-weight: 700;
+    fill: var(--color-text);
+}
+
+.donut-label {
+    font-size: 10px;
+    fill: var(--color-text-muted);
+    font-weight: 500;
+}
+
+.distribution-legend {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-top: var(--space-3);
+}
+
+.legend-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.legend-value {
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+}
+
+/* Processing Times */
+.processing-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
+}
+
+.processing-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.processing-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.processing-name {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.processing-days {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.processing-days.warning {
+    color: #dc2626;
+}
+
+.processing-bar {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.processing-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 0.5s ease;
+}
+
+.processing-fill.success {
+    background: linear-gradient(90deg, #1e8449 0%, #27ae60 100%);
+}
+
+.processing-fill.warning {
+    background: linear-gradient(90deg, #f59e0b 0%, #dc2626 100%);
+}
+
+.target-badge {
+    padding: 6px 12px;
+    background: #ecfdf5;
+    color: #059669;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    border: 1px solid #a7f3d0;
+}
+
+/* Date Selector */
+.date-selector {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 8px 16px;
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+}
+
+.date-selector svg {
+    color: var(--color-text-muted);
+}
+
+.date-selector select {
+    border: none;
+    background: transparent;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text);
+    cursor: pointer;
+    padding-right: var(--space-4);
+}
+
+.date-selector select:focus {
+    outline: none;
+}
+
+/* Officers Table */
+.officers-table .officer-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.officers-table .officer-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e8449 0%, #27ae60 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
+.officers-table .officer-name {
+    display: block;
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.officers-table .officer-email {
+    display: block;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: var(--font-size-sm);
+}
+
+.rank-badge.rank-1 {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: white;
+}
+
+.rank-badge.rank-2 {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.rank-badge.rank-3 {
+    background: #fcd9b6;
+    color: #c2410c;
+}
+
+.time-good {
+    color: #059669;
+    font-weight: 600;
+}
+
+.performance-score {
+    color: #059669;
+    font-weight: 600;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+}
+
+.btn-link:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .analytics-row {
+        grid-template-columns: 1fr;
+    }
+
+    .processing-grid {
+        grid-template-columns: 1fr;
+    }
+}
