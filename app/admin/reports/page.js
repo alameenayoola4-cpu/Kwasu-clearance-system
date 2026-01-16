@@ -12,6 +12,8 @@ export default function ReportsPage() {
     const [loading, setLoading] = useState(true);
     const [analytics, setAnalytics] = useState(null);
     const [dateRange, setDateRange] = useState('6months');
+    const [exporting, setExporting] = useState(false);
+    const [showExportMenu, setShowExportMenu] = useState(false);
 
     useAuthSync('admin');
 
@@ -33,30 +35,58 @@ export default function ReportsPage() {
         }
     };
 
-    const handleExport = async () => {
+    const handleExport = async (reportType, format) => {
+        setExporting(true);
+        setShowExportMenu(false);
         try {
             const response = await fetch('/api/admin/reports', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reportType: 'statistics' }),
+                body: JSON.stringify({ reportType, format }),
             });
 
             if (response.ok) {
                 const data = await response.json();
-                const blob = new Blob([data.data.content], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = data.data.filename;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
+
+                if (format === 'pdf') {
+                    // Open HTML in new tab for printing to PDF
+                    const newWindow = window.open('', '_blank');
+                    newWindow.document.write(data.data.content);
+                    newWindow.document.close();
+                } else {
+                    // CSV download with proper filename
+                    // Add BOM for Excel UTF-8 compatibility
+                    const BOM = '\uFEFF';
+                    const blob = new Blob([BOM + data.data.content], {
+                        type: 'text/csv;charset=utf-8;'
+                    });
+
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.style.display = 'none';
+                    link.href = url;
+                    link.setAttribute('download', data.data.filename || `report-${Date.now()}.csv`);
+
+                    document.body.appendChild(link);
+                    link.click();
+
+                    // Cleanup
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                    }, 100);
+                }
             }
         } catch (err) {
             console.error('Export error:', err);
+            alert('Export failed. Please try again.');
+        } finally {
+            setExporting(false);
         }
     };
+
+
 
     // Calculate totals and percentages
     const totalRequests = (analytics?.statusDistribution?.approved || 0) +
@@ -115,14 +145,66 @@ export default function ReportsPage() {
                                 <option value="year">Jan 2024 - Dec 2024</option>
                             </select>
                         </div>
-                        <button className="btn btn-primary" onClick={handleExport}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="7 10 12 15 17 10" />
-                                <line x1="12" y1="15" x2="12" y2="3" />
-                            </svg>
-                            Export Report
-                        </button>
+                        <div className="export-dropdown">
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setShowExportMenu(!showExportMenu)}
+                                disabled={exporting}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                {exporting ? 'Exporting...' : 'Export Report'}
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: '4px' }}>
+                                    <path d="M7 10l5 5 5-5z" />
+                                </svg>
+                            </button>
+                            {showExportMenu && (
+                                <div className="export-menu">
+                                    <div className="export-menu-header">Export as CSV (Excel)</div>
+                                    <button onClick={() => handleExport('statistics', 'csv')}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 2l5 5h-5V4zM8 17h8v2H8v-2zm0-4h8v2H8v-2z" />
+                                        </svg>
+                                        Statistics Summary
+                                    </button>
+                                    <button onClick={() => handleExport('clearance', 'csv')}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M19 3H14.82C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
+                                        </svg>
+                                        Clearance Requests
+                                    </button>
+                                    <button onClick={() => handleExport('officers', 'csv')}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                                        </svg>
+                                        Officers Report
+                                    </button>
+                                    <div className="export-menu-divider"></div>
+                                    <div className="export-menu-header">Export as PDF</div>
+                                    <button onClick={() => handleExport('statistics', 'pdf')}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1z" />
+                                        </svg>
+                                        Statistics Summary
+                                    </button>
+                                    <button onClick={() => handleExport('clearance', 'pdf')}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M19 3H14.82C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
+                                        </svg>
+                                        Clearance Requests
+                                    </button>
+                                    <button onClick={() => handleExport('officers', 'pdf')}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                                        </svg>
+                                        Officers Report
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </header>
 

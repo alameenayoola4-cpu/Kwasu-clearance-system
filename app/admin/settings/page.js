@@ -197,6 +197,38 @@ export default function SettingsPage() {
                                                 <option value="2">Second Semester</option>
                                             </select>
                                         </div>
+
+                                        {/* Clearance Deadlines */}
+                                        <div className="settings-divider"></div>
+                                        <h3 className="settings-section-title">Clearance Deadlines</h3>
+
+                                        <div className="form-group">
+                                            <label>SIWES Clearance Deadline</label>
+                                            <input
+                                                type="date"
+                                                value={settings.siwesDeadline || ''}
+                                                onChange={(e) => setSettings({ ...settings, siwesDeadline: e.target.value })}
+                                            />
+                                            <p className="field-hint">Last date for students to submit SIWES clearance</p>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Final Clearance Deadline</label>
+                                            <input
+                                                type="date"
+                                                value={settings.finalDeadline || ''}
+                                                onChange={(e) => setSettings({ ...settings, finalDeadline: e.target.value })}
+                                            />
+                                            <p className="field-hint">Last date for graduating students to submit final clearance</p>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Faculty Clearance Deadline</label>
+                                            <input
+                                                type="date"
+                                                value={settings.facultyDeadline || ''}
+                                                onChange={(e) => setSettings({ ...settings, facultyDeadline: e.target.value })}
+                                            />
+                                            <p className="field-hint">Last date for faculty-level clearance submissions</p>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -344,7 +376,8 @@ export default function SettingsPage() {
 
                 .form-group input[type="text"],
                 .form-group input[type="email"],
-                .form-group input[type="number"] {
+                .form-group input[type="number"],
+                .form-group input[type="date"] {
                     padding: var(--space-3);
                     border: 1px solid var(--color-border);
                     border-radius: var(--radius-md);
