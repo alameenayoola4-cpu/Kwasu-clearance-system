@@ -1,7 +1,7 @@
 //  Officer Bulk Action API - Approve/Reject multiple requests at once
 import { cookies } from 'next/headers';
 import { verifyAuth } from '../../../../lib/auth';
-import pool from '../../../../lib/db';
+import { sql } from '../../../../lib/db';
 
 export async function POST(request) {
     try {
@@ -27,47 +27,43 @@ export async function POST(request) {
             return Response.json({ message: 'Rejection reason is required (min 5 characters)' }, { status: 400 });
         }
 
-        const client = await pool.connect();
-        try {
-            await client.query('BEGIN');
+        const newStatus = action === 'approve' ? 'approved' : 'rejected';
+        let updatedCount = 0;
 
-            const newStatus = action === 'approve' ? 'approved' : 'rejected';
-            const reviewedAt = new Date().toISOString();
-
-            // Update all requests
-            const updateQuery = `
-                UPDATE clearance_requests 
-                SET status = $1, 
-                    reviewed_by = $2, 
-                    reviewed_at = $3
-                    ${action === 'reject' ? ', rejection_reason = $4' : ''}
-                WHERE id = ANY($${action === 'reject' ? '5' : '4'})
-                AND status = 'pending'
-                RETURNING id
-            `;
-
-            const params = action === 'reject'
-                ? [newStatus, user.id, reviewedAt, reason, ids]
-                : [newStatus, user.id, reviewedAt, ids];
-
-            const result = await client.query(updateQuery, params);
-
-            await client.query('COMMIT');
-
-            return Response.json({
-                message: `Successfully ${action}d ${result.rowCount} request(s)`,
-                count: result.rowCount,
-            });
-
-        } catch (error) {
-            await client.query('ROLLBACK');
-            throw error;
-        } finally {
-            client.release();
+        // Update each request individually (neon doesn't support complex array queries the same way)
+        for (const id of ids) {
+            if (action === 'approve') {
+                const result = await sql`
+                    UPDATE clearance_requests 
+                    SET status = ${newStatus}, 
+                        reviewed_by = ${user.id}, 
+                        reviewed_at = CURRENT_TIMESTAMP
+                    WHERE id = ${id}
+                    AND status = 'pending'
+                `;
+                updatedCount++;
+            } else {
+                const result = await sql`
+                    UPDATE clearance_requests 
+                    SET status = ${newStatus}, 
+                        reviewed_by = ${user.id}, 
+                        reviewed_at = CURRENT_TIMESTAMP,
+                        rejection_reason = ${reason}
+                    WHERE id = ${id}
+                    AND status = 'pending'
+                `;
+                updatedCount++;
+            }
         }
+
+        return Response.json({
+            message: `Successfully ${action}d ${updatedCount} request(s)`,
+            count: updatedCount,
+        });
 
     } catch (error) {
         console.error('Bulk action error:', error);
         return Response.json({ message: 'Internal server error' }, { status: 500 });
     }
 }
+
