@@ -750,6 +750,51 @@
     animation: dropdownFadeIn 0.15s ease;
 }
 
+.dropdown-menu-scrollable {
+    max-height: 320px;
+    display: flex;
+    flex-direction: column;
+}
+
+.dropdown-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border);
+    background: #f9fafb;
+}
+
+.dropdown-search svg {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+.dropdown-search input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: var(--font-size-sm);
+    outline: none;
+    color: var(--color-text);
+}
+
+.dropdown-search input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.dropdown-options {
+    overflow-y: auto;
+    max-height: 260px;
+}
+
+.dropdown-no-results {
+    padding: 1rem;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
 @keyframes dropdownFadeIn {
     from {
         opacity: 0;
@@ -1191,4 +1236,32 @@
 .calendar-today-btn:hover {
     background: var(--color-primary);
     color: white;
+}
+
+/* Sidebar Logout Button */
+.sidebar-logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 16px;
+    margin-top: 12px;
+    background: transparent;
+    border: 1px solid #ef4444;
+    border-radius: var(--radius-md);
+    color: #ef4444;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sidebar-logout-btn:hover {
+    background: #ef4444;
+    color: white;
+}
+
+.sidebar-logout-btn svg {
+    flex-shrink: 0;
 }
