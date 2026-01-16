@@ -2,7 +2,7 @@
 
 // Login Page with Role Selector
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRecaptcha } from '../hooks/useRecaptcha';
@@ -10,8 +10,7 @@ import './auth.css';
 
 export default function LoginPage() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const { executeRecaptcha, isLoading: recaptchaLoading } = useRecaptcha();
+    const { executeRecaptcha } = useRecaptcha();
 
     const [formData, setFormData] = useState({
         email: '',
@@ -21,9 +20,6 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-
-    // Check if redirected due to inactivity
-    const reason = searchParams.get('reason');
 
     const handleChange = (e) => {
         const { name, value } = e.target;
