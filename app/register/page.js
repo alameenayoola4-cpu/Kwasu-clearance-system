@@ -208,7 +208,7 @@ export default function RegisterPage() {
                                     type="text"
                                     name="matric_no"
                                     className="form-input"
-                                    placeholder="e.g. U2024/ENG/001"
+                                    placeholder="e.g. U2025/ENG/001"
                                     value={formData.matric_no}
                                     onChange={handleChange}
                                     required

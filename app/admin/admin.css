@@ -1711,3 +1711,239 @@
 .export-menu button:hover svg {
     color: var(--color-primary);
 }
+
+/* ===================================
+   CUSTOM DATE PICKER STYLES
+   =================================== */
+
+.date-range-picker {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.date-separator {
+    color: var(--color-text-muted);
+    font-weight: 300;
+    font-size: 18px;
+}
+
+.custom-date-picker {
+    position: relative;
+}
+
+.date-picker-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.date-picker-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text);
+    transition: all 0.2s ease;
+    min-width: 150px;
+}
+
+.date-picker-input:hover {
+    border-color: var(--color-primary);
+}
+
+.date-picker-input svg:first-child {
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.date-picker-input .dropdown-arrow {
+    color: var(--color-text-muted);
+    margin-left: auto;
+}
+
+.date-picker-input .placeholder {
+    color: var(--color-text-muted);
+}
+
+/* Calendar Dropdown */
+.calendar-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 8px;
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--color-border);
+    z-index: 1000;
+    width: 280px;
+    padding: 16px;
+    animation: calendarFade 0.2s ease;
+}
+
+@keyframes calendarFade {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.calendar-title {
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+}
+
+.calendar-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--color-text-muted);
+    transition: all 0.2s ease;
+}
+
+.calendar-nav:hover {
+    background: rgba(30, 132, 73, 0.1);
+    color: var(--color-primary);
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.calendar-weekdays span {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    padding: 4px;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.calendar-day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    transition: all 0.15s ease;
+}
+
+.calendar-day:hover:not(.disabled):not(.selected) {
+    background: rgba(30, 132, 73, 0.1);
+}
+
+.calendar-day.empty {
+    cursor: default;
+}
+
+.calendar-day.today {
+    font-weight: 600;
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+}
+
+.calendar-day.selected {
+    background: var(--color-primary);
+    color: white;
+    font-weight: 600;
+}
+
+.calendar-day.disabled {
+    color: var(--color-text-muted);
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.calendar-footer {
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+}
+
+.calendar-today-btn {
+    padding: 6px 16px;
+    background: none;
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    color: var(--color-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.calendar-today-btn:hover {
+    background: var(--color-primary);
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .date-range-picker {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .date-separator {
+        display: none;
+    }
+
+    .custom-date-picker {
+        flex: 1;
+        min-width: 140px;
+    }
+
+    .date-picker-input {
+        width: 100%;
+    }
+
+    .calendar-dropdown {
+        width: 260px;
+    }
+}

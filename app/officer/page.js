@@ -7,7 +7,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import MobileWarning from '../components/MobileWarning';
 import CustomDropdown from '../components/CustomDropdown';
+import InactivityWarning from '../components/InactivityWarning';
 import { useAuthSync } from '../hooks/useAuthSync';
+import { useInactivityTimeout } from '../hooks/useInactivityTimeout';
 import '../student/student.css';
 import './officer.css';
 
@@ -23,6 +25,9 @@ export default function OfficerDashboard() {
 
     // Listen for auth changes from other tabs
     useAuthSync('officer');
+
+    // Enable inactivity timeout for officer (30 minutes)
+    useInactivityTimeout('officer');
 
     useEffect(() => {
         fetchDashboard();
@@ -118,6 +123,7 @@ export default function OfficerDashboard() {
     return (
         <div className="dashboard-layout">
             <MobileWarning role="officer" />
+            <InactivityWarning />
 
             {/* Sidebar */}
             <aside className="sidebar">
@@ -423,7 +429,7 @@ export default function OfficerDashboard() {
                                 </svg>
                             </div>
                             <div className="info-content">
-                                <h4>Academic Year 2023/2024 Clearance Cycle</h4>
+                                <h4>Academic Year 2025/2026 Clearance Cycle</h4>
                                 <p>The deadline for SIWES documentation submission for the current batch is Friday, November 15th. Please prioritize SIWES reviews to ensure students meet the industry deadline.</p>
                             </div>
                         </div>

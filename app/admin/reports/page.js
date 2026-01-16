@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import MobileWarning from '../../components/MobileWarning';
+import CustomDatePicker from '../../components/CustomDatePicker';
 import { useAuthSync } from '../../hooks/useAuthSync';
 import '../../student/student.css';
 import '../admin.css';
@@ -11,7 +12,13 @@ import '../admin.css';
 export default function ReportsPage() {
     const [loading, setLoading] = useState(true);
     const [analytics, setAnalytics] = useState(null);
-    const [dateRange, setDateRange] = useState('6months');
+    // Date range state - default to last 6 months
+    const [fromDate, setFromDate] = useState(() => {
+        const d = new Date();
+        d.setMonth(d.getMonth() - 6);
+        return d.toISOString().split('T')[0];
+    });
+    const [toDate, setToDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [exporting, setExporting] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
 
@@ -19,7 +26,7 @@ export default function ReportsPage() {
 
     useEffect(() => {
         fetchData();
-    }, [dateRange]);
+    }, [fromDate, toDate]);
 
     const fetchData = async () => {
         try {
@@ -132,18 +139,20 @@ export default function ReportsPage() {
                         <h1>Admin Analytics & Reports Dashboard</h1>
                     </div>
                     <div className="topbar-right">
-                        <div className="date-selector">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z" />
-                            </svg>
-                            <select
-                                value={dateRange}
-                                onChange={(e) => setDateRange(e.target.value)}
-                            >
-                                <option value="3months">Jan 2024 - Mar 2024</option>
-                                <option value="6months">Jan 2024 - Jun 2024</option>
-                                <option value="year">Jan 2024 - Dec 2024</option>
-                            </select>
+                        <div className="date-range-picker">
+                            <CustomDatePicker
+                                label="From"
+                                value={fromDate}
+                                onChange={setFromDate}
+                                maxDate={toDate}
+                            />
+                            <span className="date-separator">—</span>
+                            <CustomDatePicker
+                                label="To"
+                                value={toDate}
+                                onChange={setToDate}
+                                minDate={fromDate}
+                            />
                         </div>
                         <div className="export-dropdown">
                             <button

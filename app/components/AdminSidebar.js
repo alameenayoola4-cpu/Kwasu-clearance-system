@@ -4,6 +4,8 @@
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useInactivityTimeout } from '../hooks/useInactivityTimeout';
+import InactivityWarning from './InactivityWarning';
 
 // Modern Filled Icons (matching reference design)
 const icons = {
@@ -75,6 +77,9 @@ export default function AdminSidebar({ userName = 'Admin' }) {
     const pathname = usePathname();
     const router = useRouter();
 
+    // Enable inactivity timeout for admin (15 minutes)
+    useInactivityTimeout('admin');
+
     const handleLogout = async () => {
         // Broadcast logout to other tabs
         const { broadcastLogout } = await import('../hooks/useAuthSync');
@@ -92,50 +97,54 @@ export default function AdminSidebar({ userName = 'Admin' }) {
     };
 
     return (
-        <aside className="sidebar premium-sidebar">
-            <div className="sidebar-header">
-                <Link href="/admin" className="sidebar-logo">
-                    <Image src="/logo.png" alt="KWASU" width={40} height={40} />
-                    <div className="sidebar-logo-text">
-                        <span className="logo-title">DIGITAL CLEARANCE</span>
-                        <span className="logo-subtitle">University Admin Portal</span>
-                    </div>
-                </Link>
-            </div>
-
-            <nav className="sidebar-nav premium-nav">
-                {navItems.map((item) => (
-                    <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`nav-item ${isActive(item.href) ? 'active' : ''}`}
-                    >
-                        <span className="nav-icon">{item.icon}</span>
-                        <span className="nav-label">{item.label}</span>
+        <>
+            <InactivityWarning />
+            <aside className="sidebar premium-sidebar">
+                <div className="sidebar-header">
+                    <Link href="/admin" className="sidebar-logo">
+                        <Image src="/logo.png" alt="KWASU" width={40} height={40} />
+                        <div className="sidebar-logo-text">
+                            <span className="logo-title">DIGITAL CLEARANCE</span>
+                            <span className="logo-subtitle">University Admin Portal</span>
+                        </div>
                     </Link>
-                ))}
-            </nav>
-
-            <div className="sidebar-footer premium-footer">
-                <div className="admin-profile">
-                    <div className="admin-avatar">
-                        {userName.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="admin-info-footer">
-                        <span className="admin-name">{userName}</span>
-                        <span className="sign-out-text">Sign Out</span>
-                    </div>
-                    <button
-                        onClick={handleLogout}
-                        className="logout-btn"
-                        title="Sign Out"
-                    >
-                        <svg width="18" height="18" viewBox="0 0 24 24" style={{ fill: '#64748b', minWidth: '18px', minHeight: '18px', flexShrink: 0 }}>
-                            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
-                        </svg>
-                    </button>
                 </div>
-            </div>
-        </aside>
+
+                <nav className="sidebar-nav premium-nav">
+                    {navItems.map((item) => (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`nav-item ${isActive(item.href) ? 'active' : ''}`}
+                        >
+                            <span className="nav-icon">{item.icon}</span>
+                            <span className="nav-label">{item.label}</span>
+                        </Link>
+                    ))}
+                </nav>
+
+                <div className="sidebar-footer premium-footer">
+                    <div className="admin-profile">
+                        <div className="admin-avatar">
+                            {userName.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="admin-info-footer">
+                            <span className="admin-name">{userName}</span>
+                            <span className="sign-out-text">Sign Out</span>
+                        </div>
+                        <button
+                            onClick={handleLogout}
+                            className="logout-btn"
+                            title="Sign Out"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" style={{ fill: '#64748b', minWidth: '18px', minHeight: '18px', flexShrink: 0 }}>
+                                <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </>
     );
 }
+

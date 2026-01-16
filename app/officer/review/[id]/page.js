@@ -208,7 +208,7 @@ export default function ReviewPage({ params }) {
                             </div>
                             <div className="detail-row">
                                 <span>ACADEMIC SESSION</span>
-                                <p>2023/2024 Session</p>
+                                <p>2025/2026 Session</p>
                             </div>
                             <div className="detail-row">
                                 <span>LEVEL / STANDING</span>
