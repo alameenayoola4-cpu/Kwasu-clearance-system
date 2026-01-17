@@ -1,6 +1,7 @@
 'use client';
 
-// Shared Admin Sidebar Component - Premium Version
+// Shared Admin Sidebar Component - Premium Version with Mobile Hamburger
+import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -54,11 +55,6 @@ const icons = {
             <path d="M19.14 12.94c.04-.31.06-.63.06-.94c0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6s3.6 1.62 3.6 3.6s-1.62 3.6-3.6 3.6z" />
         </svg>
     ),
-    logout: (
-        <svg width="18" height="18" viewBox="0 0 24 24">
-            <path fill="#64748b" d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
-        </svg>
-    ),
 };
 
 // Clean flat navigation - no section labels
@@ -76,9 +72,27 @@ const navItems = [
 export default function AdminSidebar({ userName = 'Admin' }) {
     const pathname = usePathname();
     const router = useRouter();
+    const [isOpen, setIsOpen] = useState(false);
 
     // Enable inactivity timeout for admin (15 minutes)
     useInactivityTimeout('admin');
+
+    // Close menu when route changes
+    useEffect(() => {
+        setIsOpen(false);
+    }, [pathname]);
+
+    // Prevent body scroll when menu is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
 
     const handleLogout = async () => {
         // Broadcast logout to other tabs
@@ -99,7 +113,51 @@ export default function AdminSidebar({ userName = 'Admin' }) {
     return (
         <>
             <InactivityWarning />
-            <aside className="sidebar premium-sidebar">
+
+            {/* Mobile Header with Hamburger */}
+            <div className="mobile-header">
+                <button
+                    className="hamburger-btn"
+                    onClick={() => setIsOpen(true)}
+                    aria-label="Open menu"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <line x1="3" y1="12" x2="21" y2="12" />
+                        <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                </button>
+                <Link href="/admin" className="mobile-logo">
+                    <Image src="/logo.png" alt="KWASU" width={32} height={32} />
+                    <span>Admin Portal</span>
+                </Link>
+                <div className="mobile-avatar">
+                    {userName.charAt(0).toUpperCase()}
+                </div>
+            </div>
+
+            {/* Overlay */}
+            {isOpen && (
+                <div
+                    className="sidebar-overlay"
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
+
+            {/* Sidebar */}
+            <aside className={`sidebar premium-sidebar ${isOpen ? 'open' : ''}`}>
+                {/* Close button for mobile */}
+                <button
+                    className="sidebar-close-btn"
+                    onClick={() => setIsOpen(false)}
+                    aria-label="Close menu"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+
                 <div className="sidebar-header">
                     <Link href="/admin" className="sidebar-logo">
                         <Image src="/logo.png" alt="KWASU" width={40} height={40} />
@@ -116,6 +174,7 @@ export default function AdminSidebar({ userName = 'Admin' }) {
                             key={item.href}
                             href={item.href}
                             className={`nav-item ${isActive(item.href) ? 'active' : ''}`}
+                            onClick={() => setIsOpen(false)}
                         >
                             <span className="nav-icon">{item.icon}</span>
                             <span className="nav-label">{item.label}</span>
@@ -147,4 +206,3 @@ export default function AdminSidebar({ userName = 'Admin' }) {
         </>
     );
 }
-

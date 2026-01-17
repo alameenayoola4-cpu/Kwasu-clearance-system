@@ -1177,6 +1177,9 @@
         transform: translateX(-100%);
         transition: transform 0.3s ease;
         z-index: 200;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
     }
 
     .sidebar.open {
@@ -1186,6 +1189,32 @@
     /* Adjust sidebar header for close button */
     .sidebar.open .sidebar-header {
         padding-top: 20px;
+    }
+
+    /* Ensure nav takes remaining space */
+    .sidebar-nav {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    /* Ensure footer is always visible at bottom */
+    .sidebar-footer {
+        flex-shrink: 0;
+        border-top: 1px solid #e5e7eb;
+        padding: 16px;
+        background: white;
+    }
+
+    .sidebar-footer .admin-profile,
+    .sidebar-footer .sidebar-user-profile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    /* Premium footer adjustments */
+    .premium-footer {
+        margin-top: auto;
     }
 }
 
