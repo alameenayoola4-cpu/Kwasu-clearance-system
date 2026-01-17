@@ -24,10 +24,10 @@ A modern, full-stack digital clearance management system for Kwara State Univers
 
 ## Tech Stack
 
-- **Framework:** Next.js 14 (App Router)
-- **Database:** SQLite with better-sqlite3
+- **Framework:** Next.js 16 (App Router)
+- **Database:** PostgreSQL (Neon)
 - **Authentication:** JWT with HTTP-only cookies
-- **Styling:** CSS with CSS Variables
+- **Styling:** CSS
 
 ## Responsive Design
 
@@ -42,4 +42,4 @@ This project is licensed under the MIT License.
 
 ---
 
-Built for KWASU
+Developed by **Ayoola Adedeji** for KWASU
