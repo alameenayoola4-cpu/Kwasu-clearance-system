@@ -1,6 +1,6 @@
 # KWASU Digital Clearance System
 
-A modern, full-stack digital clearance management system for Kwara State University (KWASU). Built with Next.js 14, featuring role-based access for students, clearance officers, and administrators.
+A modern, full-stack digital clearance management system for Kwara State University (KWASU). Built with Next.js 16, featuring role-based access for students, clearance officers, and administrators.
 
 ## Features
 
