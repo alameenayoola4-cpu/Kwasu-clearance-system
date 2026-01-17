@@ -1,7 +1,7 @@
 'use client';
 
 // Student Dashboard
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthSync } from '../hooks/useAuthSync';
@@ -14,12 +14,55 @@ export default function StudentDashboard() {
     const [data, setData] = useState(null);
     const [error, setError] = useState('');
 
+    // Notification state
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const notificationRef = useRef(null);
+
     // Listen for auth changes from other tabs
     useAuthSync('student');
 
     useEffect(() => {
         fetchDashboard();
+        fetchNotifications();
     }, []);
+
+    // Close notification dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+                setShowNotifications(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const fetchNotifications = async () => {
+        try {
+            const response = await fetch('/api/student/notifications');
+            const result = await response.json();
+            if (result.success) {
+                setNotifications(result.data.notifications || []);
+                setUnreadCount(result.data.unreadCount || 0);
+            }
+        } catch (err) {
+            console.error('Failed to fetch notifications:', err);
+        }
+    };
+
+    const getTimeAgo = (date) => {
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        if (seconds < 60) return 'Just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days}d ago`;
+        return new Date(date).toLocaleDateString();
+    };
 
     const fetchDashboard = async () => {
         try {
@@ -114,13 +157,74 @@ export default function StudentDashboard() {
                         </span>
                     </div>
                     <div className="topbar-right">
-                        <button className="notification-btn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                            </svg>
-                            <span className="notification-dot"></span>
-                        </button>
+                        <div className="notification-wrapper" ref={notificationRef}>
+                            <button
+                                className="notification-btn"
+                                onClick={() => setShowNotifications(!showNotifications)}
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                                </svg>
+                                {unreadCount > 0 && (
+                                    <span className="notification-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                                )}
+                            </button>
+
+                            {showNotifications && (
+                                <div className="notification-dropdown">
+                                    <div className="notification-header">
+                                        <h4>Notifications</h4>
+                                        {unreadCount > 0 && <span className="unread-badge">{unreadCount} new</span>}
+                                    </div>
+                                    <div className="notification-list">
+                                        {notifications.length === 0 ? (
+                                            <div className="notification-empty">
+                                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                                                </svg>
+                                                <p>No notifications yet</p>
+                                            </div>
+                                        ) : (
+                                            notifications.slice(0, 5).map((n) => (
+                                                <Link
+                                                    href={`/student/status/${n.id}`}
+                                                    key={n.id}
+                                                    className={`notification-item ${n.notificationType}`}
+                                                    onClick={() => setShowNotifications(false)}
+                                                >
+                                                    <div className="notification-icon">
+                                                        {n.notificationType === 'success' ? (
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                                                            </svg>
+                                                        ) : n.notificationType === 'error' ? (
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                                                            </svg>
+                                                        ) : (
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                    <div className="notification-content">
+                                                        <p>{n.message}</p>
+                                                        <span className="notification-time">{getTimeAgo(n.updatedAt)}</span>
+                                                    </div>
+                                                </Link>
+                                            ))
+                                        )}
+                                    </div>
+                                    {notifications.length > 5 && (
+                                        <Link href="/student/history" className="notification-view-all">
+                                            View all notifications
+                                        </Link>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                         <div className="user-info">
                             <span className="user-name">{data?.user?.name}</span>
                             <span className="user-matric">MAT NO: {data?.user?.matric_no}</span>

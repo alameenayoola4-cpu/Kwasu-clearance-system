@@ -33,6 +33,11 @@ const icons = {
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
         </svg>
     ),
+    profile: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+        </svg>
+    ),
 };
 
 // Student navigation items
@@ -41,6 +46,7 @@ const navItems = [
     { href: '/student/apply', label: 'Apply for Clearance', icon: icons.apply },
     { href: '/student/history', label: 'Clearance History', icon: icons.history },
     { href: '/student/documents', label: 'Document Uploads', icon: icons.documents },
+    { href: '/student/profile', label: 'My Profile', icon: icons.profile },
     { href: '/student/help', label: 'Help & Support', icon: icons.help },
 ];
 
