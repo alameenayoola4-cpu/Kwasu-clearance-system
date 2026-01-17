@@ -73,13 +73,14 @@ export async function POST(request) {
         // Create reset URL
         const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
-        // Log the reset URL (in production, send email instead)
-        console.log('=================================');
-        console.log('PASSWORD RESET LINK FOR:', student.name);
-        console.log('Email:', email);
-        console.log('Reset URL:', resetUrl);
-        console.log('Expires:', expiresAt);
-        console.log('=================================');
+        // Log only in development mode (never expose tokens in production)
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[DEV] Password reset requested for: ${student.name} (${email})`);
+            console.log(`[DEV] Reset URL: ${resetUrl}`);
+        }
+
+        // TODO: Integrate email service (e.g., Resend, SendGrid)
+        // await sendPasswordResetEmail(email, resetUrl, student.name);
 
         return Response.json({
             success: true,
