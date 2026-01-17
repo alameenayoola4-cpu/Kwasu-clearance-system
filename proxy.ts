@@ -1,6 +1,7 @@
-// Middleware for route protection
+// Proxy for route protection - Next.js 16+
 import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
+import type { NextRequest } from 'next/server';
 
 const JWT_SECRET = new TextEncoder().encode(
     process.env.JWT_SECRET || 'kwasu-clearance-secret-key-2024-secure'
@@ -15,13 +16,13 @@ const protectedRoutes = ['/student', '/officer', '/admin'];
 const authRoutes = ['/login', '/register'];
 
 // Role-based route access
-const roleRoutes = {
+const roleRoutes: Record<string, string[]> = {
     student: ['/student'],
     officer: ['/officer'],
     admin: ['/admin'],
 };
 
-export async function middleware(request) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Get token from cookie
@@ -35,7 +36,7 @@ export async function middleware(request) {
     if (isAuthRoute && token) {
         try {
             const { payload } = await jwtVerify(token, JWT_SECRET);
-            const role = payload.role;
+            const role = payload.role as string;
 
             // Redirect to appropriate dashboard based on role
             const dashboardUrl = new URL(`/${role}`, request.url);
@@ -58,7 +59,7 @@ export async function middleware(request) {
         try {
             // Verify token
             const { payload } = await jwtVerify(token, JWT_SECRET);
-            const role = payload.role;
+            const role = payload.role as string;
 
             // Check if user has access to this route
             const allowedRoutes = roleRoutes[role] || [];
